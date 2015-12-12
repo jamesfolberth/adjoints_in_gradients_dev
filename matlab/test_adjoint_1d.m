@@ -2,11 +2,13 @@ function [] = test_adjoint_1d()
 
 % waveletfamilies('n')
 
+dwtmode('zpd', 'nodisp');
+
 extmode = 'zpd'
-%extmode = 'sym'
+extmode = 'sym'
 %extmode = 'ppd'
 
-levels = 2;
+levels = 3;
 
 wname  = 'db1'
 dwname = 'db1';
@@ -16,8 +18,6 @@ dwname = 'db1';
 %dwname = 'db3';
 %wname  = 'db4'
 %dwname = 'db4';
-
-
 
 %wname  = 'bior4.4'
 %dwname = 'rbio4.4';
@@ -34,13 +34,23 @@ dwname = 'db1';
 [Lo_D, Hi_D] = wfilters(wname, 'd'); % decomp filters
 lf = length(Lo_D);
 
+min_sig_len = 2^levels*(lf-1);
 %for lx=lf:25
-for lx=9
+for lx=min_sig_len:min_sig_len+25
    W = analysis_mat_1d(lx, wname, extmode, levels);
-   %Wadj = analysis_mat_adjoint_1d(lx, wname, dwname, extmode);
-   %fprintf(1, '\\|W^T-Wadj\\|_inf = %f\n', norm(W.'-Wadj,'inf'))
+   Wadj = analysis_mat_adjoint_1d(lx, wname, dwname, extmode, levels);
+   
+   %W.'
+   %Wadj
+   fprintf(1, '\\|W^T-Wadj\\|_inf = %e\n', norm(W.'-Wadj,'inf'))
 
-   W
+   x = randn(lx,1);
+   xe = wextend('1D', extmode, x, lf-1, 'b');
+   dwtmode('zpd', 'nodisp');
+   [C,L] = wavedec(xe, levels, wname);
+   fprintf(1, '\\|W*x-wavedec(xe)\\|_2 = %e\n', norm(W*x-C));
+   
+   fprintf(1, '\n');
 end
 
 end

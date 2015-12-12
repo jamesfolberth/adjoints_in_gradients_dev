@@ -1,4 +1,4 @@
-function [Wadj] = analysis_mat_adjoint_1d(lx, wname, dwname, extmode)
+function [Wadj] = analysis_mat_adjoint_1d(lx, wname, dwname, extmode, levels)
 % analysis_mat_adjoint_1d - build wavelet analysis matrix
 % 
 % W = analysis_mat_adjoint_1d(lx, wname, dwname, extmode) builds the adjoint of the 
@@ -12,6 +12,12 @@ function [Wadj] = analysis_mat_adjoint_1d(lx, wname, dwname, extmode)
 % 
 % Supported signal extension modes are 'zpd', 'sym', and 'ppd'.
 % 
+
+if nargin < 5
+   levels = 1;
+end
+assert(levels >= 1, 'Number of decomposition levels should be >= 1.');
+assert(levels <= wmaxlev(lx, wname), 'Number of decomposition levels too high.');
 
 [Lo_D, Hi_D] = wfilters(wname, 'd'); % decomp filters
 lf = length(Lo_D);
@@ -29,18 +35,14 @@ if lx < lf
    error('Signal length is shorter than filter length.');
 end
 
-Wadj = zeros(lx, 2*la);
+L = build_wavedec_levels_1d(lx, levels, wname, extmode);
+num_coeffs = sum(L(1:end-1)); % number of coefficients in the full decomposition
+Wadj = zeros(lx, num_coeffs);
 
-for i=1:la
-   ca = zeros(la,1); cd = zeros(la,1);
-   ca(i) = 1;
-   xe = idwt(ca, cd, dwname, lx+2*(lf-1), 'mode', 'zpd'); % take central portion
-   Wadj(:,i) = extension_adjoint_1d(xe, lx, lf-1, extmode);
-end
-for i=la+1:2*la
-   ca = zeros(la,1); cd = zeros(la,1);
-   cd(i-la) = 1;
-   xe = idwt(ca, cd, dwname, lx+2*(lf-1), 'mode', 'zpd'); % take central portion
+dwtmode('zpd', 'nodisp'); % waverec doesn't take the 'mode' arg like (i)dwt
+for i=1:num_coeffs
+   C = zeros(num_coeffs,1); C(i) = 1;
+   xe = waverec(C, L, dwname);
    Wadj(:,i) = extension_adjoint_1d(xe, lx, lf-1, extmode);
 end
 

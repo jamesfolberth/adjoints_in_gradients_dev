@@ -6,10 +6,13 @@ function [W] = analysis_mat_1d(lx, wname, extmode, levels)
 % extmode is a string containing the signal extension mode.
 %
 % W is constructed by computing the wavelet coefficients for the ith canonical
-% basis vector e_i.  Each column of W contains [ca1; cd1; ca2; cd2; ...].
+% basis vector e_i.  Each column of W contains coefficients organized like the 
+% output of wavedec.
 % 
 % Supported signal extension modes are 'zpd', 'sym', and 'ppd'.  The signal is
 % extended on both sides.
+%
+% TODO: this could maybe be extended to wavelet packets, maybe?
 % 
 
 if nargin < 4
@@ -35,31 +38,23 @@ if lx < lf
 end
 
 % compute total number of coefficients (used for pre-allocation)
+nrows = la;
 la_l = la;
-nrows = 2*la;
 for l=2:levels
    la_l = floor((la_l+(lf-1))/2);
-   nrows = nrows + 2*la_l;
+   nrows = nrows + la_l;
 end
+nrows = nrows + la_l;
 
 W = zeros(nrows, lx);
 
+dwtmode('zpd', 'nodisp'); % wavedec doesn't take the 'mode' arg like (i)dwt
 for i=1:lx;
    x = zeros(lx,1); x(i) = 1; % ith canonical basis vector
    xe = wextend('1D', extmode, x, lf-1, 'b');
-   [ca, cd] = dwt(xe, wname, 'mode', 'zpd');
-   W(1:2*la,i) = [ca; cd];
    
-   % handle the remaining levels
-   % we don't do any extension here, since we're working off of approx coeffs
-   row_pointer = 2*la;
-   la_l = la;
-   for l=2:levels
-      la_l = floor((la_l+(lf-1))/2);
-      [ca_l, cd_l] = dwt(ca, wname, 'mode', 'zpd');
-      W(row_pointer+1:row_pointer+2*la_l,i) = [ca_l; cd_l];
-      row_pointer = row_pointer + 2*la_l;
-   end
+   [C,L] = wavedec(xe, levels, wname);
+   W(:,i) = C;
 end
 
 end
