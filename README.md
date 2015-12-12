@@ -11,5 +11,11 @@ If the wavelet analysis operator is orthogonal, we can reformulate the problem e
 
 For non-orthogonal wavelet operators (e.g. CDF wavelets), the reformulation is not exact.  Our code computes the action of `W^*` in O(N) operations, facilitating the efficient solution of the original problem.
 
-  1. Amir Beck and Marc Teboulle, A Fast Iterative Shrinkage-Thresholding Algorithm for Linear Inverse Problems, SIAM Journal on Imaging Sciences 2 (2009).
-  2. Patrick L. Combettes and Jean-Christophe Pesquet, A Douglas–Rachford Splitting Approach to Nonsmooth Convex Variational Signal Recovery, IEEE Journal of Selected Topics in Signal Processing (2007).
+## MATLAB
+Most of the code is in MATLAB.  I've also put [Beck's FISTA code](https://web.iem.technion.ac.il/images/user-files/becka/papers/wavelet_FISTA.zip) and the [HNO image deblurring code](http://www.imm.dtu.dk/~pcha/HNO/) in the repo for some of our experiments.
+
+## Julia
+There is a bit of experimental code in the julia directory.  We tried to see how fast automatic differentiation could compute the gradient.
+
+  1. Amir Beck and Marc Teboulle, *A Fast Iterative Shrinkage-Thresholding Algorithm for Linear Inverse Problems*, SIAM Journal on Imaging Sciences 2 (2009).
+  2. Patrick L. Combettes and Jean-Christophe Pesquet, *A Douglas–Rachford Splitting Approach to Nonsmooth Convex Variational Signal Recovery*, IEEE Journal of Selected Topics in Signal Processing (2007).
