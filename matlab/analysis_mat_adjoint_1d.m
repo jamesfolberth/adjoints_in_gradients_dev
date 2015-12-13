@@ -31,10 +31,6 @@ otherwise
    error('Unsupported signal extension mode: %s', extmode)
 end
 
-if lx < lf
-   error('Signal length is shorter than filter length.');
-end
-
 L = build_wavedec_levels_1d(lx, levels, wname, extmode);
 num_coeffs = sum(L(1:end-1)); % number of coefficients in the full decomposition
 Wadj = zeros(lx, num_coeffs);

@@ -33,10 +33,6 @@ otherwise
    error('Unsupported signal extension mode: %s', extmode)
 end
 
-if lx < lf
-   error('Signal length is shorter than filter length.');
-end
-
 % compute total number of coefficients (used for pre-allocation)
 nrows = la;
 la_l = la;
