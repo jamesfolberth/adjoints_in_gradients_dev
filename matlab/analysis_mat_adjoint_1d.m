@@ -7,7 +7,7 @@ function [Wadj] = analysis_mat_adjoint_1d(lx, wname, dwname, extmode, levels)
 % dwname is a string containing the dual wavlet name.
 % extmode is a string containing the signal extension mode.
 %
-% Wadj is constructed via reconstruction of wavelet coefficients
+% Wadj is constructed via dual reconstruction of wavelet coefficients
 % and applying the adjoint extension operator.
 % 
 % Supported signal extension modes are 'zpd', 'sym', and 'ppd'.
