@@ -1,0 +1,266 @@
+\documentclass{article}
+%\documentclass[draft]{article}
+% Functions, packages, etc.
+%[[[
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{array}
+
+\usepackage{graphicx}
+%\usepackage{subfig}
+\usepackage[labelfont=bf]{caption}
+%\usepackage[labelfont=bf]{subcaption}
+\usepackage[top=1in, bottom=1in, left=1in, right=1in]{geometry}
+\pagenumbering{arabic}
+\usepackage{hyperref}
+\usepackage{enumerate}
+%\numberwithin{equation}{section}
+%\usepackage{soul} % for \ul - a ``better'' underlining command
+
+%\usepackage{colortbl} % for coloring \multicolumn (tabular in general, I think)
+% For \rowcolor
+%\definecolor{table_header}{gray}{0.5}
+%\definecolor{table_data}{gray}{0.85}
+
+
+%% Inserting code and syntax highlighting
+%% [[[
+%\usepackage{listings} % like verbatim, but allows for syntax highlighting and more
+%\usepackage{color} % colors
+%\usepackage[usenames,dvipsnames]{xcolor}% More colors
+%\usepackage{caption} % captions
+%\DeclareCaptionFont{white}{\color{white}}
+%\DeclareCaptionFormat{listing}{\colorbox{gray}{\parbox{\textwidth}{#1#2#3}}}
+%\captionsetup[lstlisting]{format=listing,labelfont=white,textfont=white}
+%\usepackage{framed} % put a frame around things
+%
+%% define some custom colors
+%\definecolor{dkgreen}{rgb}{0,0.6,0}
+%\definecolor{lgreen}{rgb}{0.25,1,0}
+%\definecolor{purple}{rgb}{0.35,0.02,0.48}
+%
+%% Some changes to MATLAB/GNU Octave language in listings
+%\lstset{frame=tbrl,
+%    language=Matlab,
+%    aboveskip=3mm,
+%    belowskip=3mm,
+%    belowcaptionskip=3mm,
+%    showstringspaces=false,
+%    columns=flexible,
+%    basicstyle={\small\ttfamily\color{black}},
+%    numbers=left,
+%    numberstyle=\tiny\color{purple},
+%    keywordstyle=\color{dkgreen},
+%    commentstyle=\color{red},
+%    stringstyle=\color{purple},
+%    breaklines=true,
+%    breakatwhitespace=true,
+%    tabsize=4,
+%    rulecolor=\color{black},
+%    morekeywords={string,fstream}
+%}
+%% ]]]
+
+
+%My Functions
+\newcommand{\diff}[2]{\dfrac{d #1}{d #2}}
+\newcommand{\diffn}[3]{\dfrac{d^{#3} #1}{d {#2}^{#3}}}
+\newcommand{\pdiff}[2]{\dfrac{\partial #1}{\partial #2}}
+\newcommand{\pdiffn}[3]{\dfrac{\partial^{#3} #1}{\partial {#2}^{#3}}}
+\newcommand{\drm}{\mathrm{d}}
+\newcommand{\problemline}{\rule{\textwidth}{0.25mm}}
+\newcommand{\problem}[1]{\problemline\\#1\\\problemline\vspace{10pt}}
+\newcommand{\reals}{\mathbb{R}}
+\newcommand{\qline}[2]{\qbezier(#1)(#1)(#2)}
+\newcommand{\abox}[1]{\begin{center}\fbox{#1}\end{center}}
+\newcommand{\lie}{\mathcal{L}}
+\newcommand{\defeq}{\stackrel{\operatorname{def}}{=}}
+
+
+% AMS theorem stuff
+% [[[
+\newtheoremstyle{mystuff}{}{}{\itshape}{}{\bfseries}{:}{.5em}{}
+\theoremstyle{mystuff}
+\newtheorem{definition}{Definition}[section]
+\newtheorem*{definition*}{Definition}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem*{theorem*}{Theorem}
+\newtheorem{lemma}{Lemma}[section]
+\newtheorem*{lemma*}{Lemma}
+\newtheorem*{proposition*}{Proposition}
+\newtheorem{corallary}{Corallary}
+\newtheorem*{remark}{Remark}
+
+\newtheoremstyle{myexample}{}{}{}{}{\bfseries}{:}{.5em}{}
+\theoremstyle{myexample}
+\newtheorem*{example*}{Example}
+
+
+% Stolen from http://tex.stackexchange.com/questions/8089/changing-style-of-proof
+\makeatletter \renewenvironment{proof}[1][\proofname] {\par\pushQED{\qed}\itshape\topsep6\p@\@plus6\p@\relax\trivlist\item[\hskip\labelsep\bfseries#1\@addpunct{:}]\ignorespaces}{\popQED\endtrivlist\@endpefalse} \makeatother
+
+% Stolen from http://tex.stackexchange.com/questions/12913/customizing-theorem-name
+\newtheoremstyle{named}{}{}{\itshape}{}{\bfseries}{:}{.5em}{\thmnote{#3's }#1}
+\theoremstyle{named}
+\newtheorem*{namedtheorem}{Theorem}
+% ]]]
+
+%]]]
+
+% Output Control Variables
+\def\true{1}
+\def\false{0}
+\def\figures{1}
+\def\tables{1}
+%\usepackage{showkeys}
+
+\title{Adjoint Wavelet}
+%\date{}
+\author{James Folberth}
+
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+\section{Introduction}
+% [[[
+
+The adjoint (transpose for real wavelets) of wavelet analysis operators appear in some image deblurring problems \cite{beck_2009}. As an example, let $R$ be a known blurring operator, $W$ a wavelet analysis operator, and $b$ an image blurred under the action of $R$. Since we expect images to have sparse wavelet coefficients, the following problem formulation is reasonable:
+
+\[ \min_x \|RWx-b\|_2^2 + \lambda \|x\|_1. \] 
+
+\noindent The gradient of the first term is $2W^*R^*(RWx-b)$. One can use this with a (fast) proximal gradient method (e.g. FISTA \cite{beck_2009}). We can compute the action of $R$ and $R^*$ efficiently in the Fourier domain. However, wavelet toolboxes do not provide an efficient means to compute $W^*$, as it is not a standard operation. The standard operations are $W$ and $W^\dagger$, the pseudoinverse.\\
+
+If the wavelet analysis operator is orthogonal, we can reformulate the problem exactly, so we no longer need $W^*$ (\cite{combettes_2007}, Proposition 11):
+
+\[ \min_y \|Ry-b\|_2^2 + \lambda \|W^\dagger y\|_1. \] 
+
+\noindent Additionally, we know that $W^*=W^\dagger$, so we could solve the original problem.\\
+
+For non-orthogonal wavelet operators (e.g. CDF wavelets, which are used in the JPEG 2000 standard \cite{skodras_2001}), the reformulation is not exact.  We would like to compute the action of $W^*$ in $\mathcal{O}(N)$ operations, which would facilitate the efficient solution of the original problem.\\
+
+Another approach is to compute the gradient $2W^*R^*(RWx-b)$ using automatic differentiation.  Initial experiments suggest that this does not scale well with image size, and therefore is not a viable approach.\\
+
+% ]]]
+
+\section{Adjoint wavelet}
+% [[[
+
+\subsection{Frames}
+% [[[
+Let $\mathcal{H}$ be a Hilbert space.  Let the inner product be linear in its first argument.  An idea is to try to recover a signal $f\in\mathcal{H}$ from its inner products with a family of vectors $\{\phi_n\}_{n\in\Gamma}$, where $\Gamma$ is an index set.  Frames are used to provide conditions under which this recovery is possible.\\
+
+\begin{definition*}[5.1, Mallat]
+   The sequence $\{\phi_n\}_{n\in\Gamma}$ is a \textbf{frame} of $\mathcal{H}$ if there exist constants $B\ge A\ge 0$ such that 
+
+   \[ \forall f\in\mathcal{H}, \quad A\|f\|^2 \le \sum_{n\in\Gamma} |\langle f, \phi_n\rangle|^2 \le B\|f\|^2. \] 
+
+   \noindent When $A=B$, the frame is said to be \textbf{tight}.  If the $\{\phi_n\}_{n\in\Gamma}$ are linearly independent then the frame is not redundant and is called a \textbf{Riesz basis}.\\
+\end{definition*}
+
+\noindent If the frame condition is satisfied, we may define a so-called \textbf{frame analysis operator} $\Phi$:
+
+\[ \forall n\in \Gamma, \quad \Phi f[n] = \langle f, \phi_n\rangle. \] 
+
+\noindent Let $\ell^2(\Gamma)$ be the space of finite energy coefficients:
+
+\[ \ell^2(\Gamma) = \{a \,:\, \|a\|^2 = \sum_{n\in\Gamma} |a[n]|^2 < \infty \}. \] 
+
+\noindent The adjoint $\Phi^\ast$ is defined over $\ell^2(\Gamma)$ as usual:
+
+\[ \langle \Phi^\ast a, f\rangle = \langle a, \Phi f\rangle = \sum_{n\in\Gamma} a[n]\langle f, \phi_n\rangle^\ast. \] 
+
+\noindent It is therefore the synthesis operator
+
+\[ \Phi^\ast a = \sum_{n\in \Gamma} a[n]\phi_n. \] 
+
+The reconstruction of $f$ from its frame coefficients $\Phi f[n]$ is computed with the Moore-Penrose pseudoinverse $\Phi^\dagger$.
+
+
+\begin{theorem*}[5.4, Mallat]
+   If $\Phi$ is a frame operator, then $\Phi^\ast\Phi$ is invertible and the pseudo inverse satisfies
+
+   \[ \Phi^\dagger = (\Phi^\ast\Phi)^{-1}\Phi^\ast. \] 
+\end{theorem*}
+
+\noindent The pseudoinverse handles reconstruction through synthesis in a dual frame.  This is the central result that guides us in the construction of the adjoint wavelet analysis operator.
+
+\begin{theorem*}[5.5, Mallat]
+   Let $\{\phi_n\}_{n\in\Gamma}$ be a frame with bounds $0<A\le B$.  The dual operator defined via
+
+   \[ \forall n\in \Gamma, \quad \widetilde{\Phi} f[n] = \langle f, \tilde{\phi}_n\rangle, \quad \tilde{\phi}_n = (\Phi^\ast\Phi)^{-1} \phi_n \] 
+
+   \noindent satisfies $\widetilde{\Phi}^\ast = \Phi^\dagger$, and thus
+
+   \[ f = \sum_{n\in\Gamma} \langle f, \phi_n\rangle \tilde{\phi}_n = \sum_{n\in\Gamma} \langle f, \tilde{\phi}_n\rangle \phi_n. \] 
+
+   \noindent It defines a dual frame as
+
+   \[ \forall f\in\mathcal{H}, \quad \frac{1}{B}\|f\|^2 \le \sum_{n\in\Gamma} |\langle f, \tilde{\phi}_n\rangle|^2 \le \dfrac{1}{A} \|f\|^2. \] 
+
+   \noindent If the frame is tight (i.e., $A=B$), then $\tilde{\phi}_n=A^{-1}\phi_n$.
+\end{theorem*}
+
+We can now specialize the results given above to the problem at hand: compute the action of $W^\ast$, where $W$ is a (multistage) wavelet analysis operator.  From Theorem 5.5 of Mallat (cited above), we know that $\widetilde{\Phi}^\ast = \Phi^\dagger$.  Do we have $\Phi^\ast = \widetilde{\Phi}^\dagger$?  If $\widetilde{W}$ is the dual wavelet analysis operator, do we have $W^\ast = \widetilde{W}^\dagger$, even for finite length signals?  It turns out that with slight modification to the way one handles boundary conditions, the answer is yes!\\
+
+The action of $W$ is analysis with the (primal) wavelet.  For orthogonal wavelets, the action of $\widetilde{W}^\dagger$ is reconstruction with the (primal) wavelet.  For biorthogonal wavelets, the action of $\widetilde{W}^\dagger$ is reconstruction with the dual (reverse) wavelet.\\
+
+% ]]]
+
+\subsection{Adjoint wavelet for finite length signals}
+% [[[
+A lot of the wavelet theory is done for infinite length signals.  In applications, however, we often deal with finite signals.  In the process of computing wavelet coefficients, we must make assumptions about the behavior of the signal past the boundaries.  One common method of treating the boundaries of finite signals is to extend the signal at the boundaries.  Common extension methods assume the signal is zero outside the boundary, the signal is periodic, or that the signal is symmetric about the boundaries.  {\sc matlab}'s default extension method is the half-point symmetric extension \cite{matlab_wt_2015, strang_1996}.\\
+
+We can separate the various signal extension methods (each a linear operation) from the computation of the wavelet coefficients.  A wavelet operator $W$ can be factored, in a loose sense, as
+
+\[ W = W_\text{zpd}E, \] 
+
+\noindent where $W_\text{zpd}$ is the wavelet analysis under zero-padded boundary conditions and $E$ is the preferred signal extension operator.  Thus, the action of $W$ on a signal $x$ occurs in two stages: first, extend the signal $x$ under the action of $E$; second, compute the wavelet coefficients of the extended signal assuming the extended signal has zero-padded boundary conditions.\\
+
+We noticed that $W^\ast_{\text{zpd}}=\widetilde{W}_{\text{zpd}}^\dagger$.  This did not occur for other, more appropriate, extension modes.  However, we do have
+
+\[ W^\ast = E^\ast W^\ast_{\text{zpd}} = E^\ast \widetilde{W}^\dagger_\text{zpd}. \] 
+
+\noindent One can readily find the adjoint of the extension operator $E$ (as we will show in the next few subsections).  Applying $\widetilde{W}^\dagger_\text{zpd}$ is a standard operation in {\sc matlab}'s Wavelet Toolbox.\\
+
+% ]]]
+
+\subsection{Adjoint extenstion - zero-padded}
+% [[[
+We will first handle the case of a one-dimensional signal, $x$, with entries $x[0], ..., x[N-1]$.  Let $L_p$ be the length of the wavelet analysis filters.  We extend the signal to have $L_p-1$ zeros on both the right and left sides.
+
+\[ \underbrace{0, ..., 0}_{L_p-1}, x[0], ..., x[N-1], \underbrace{0, ..., 0}_{L_p-1}. \]
+
+\noindent We can represent this extension $E$ as a matrix, which will act on the vector $x$:
+
+\[ E = \begin{bmatrix} 0_{(L_p-1)\times N}\\ I_{N\times N}\\ 0_{(L_p-1)\times N}\end{bmatrix} = \begin{bmatrix} 0 & 0 & \cdots & 0 & 0\\ \vdots & \vdots &\ddots & \vdots & \vdots\\ 0 & 0 & \cdots & 0 & 0\\[0.5em] 1 & 0 & \cdots & 0 & 0\\ 0 & 1 & \cdots & 0 & 0\\ \vdots & \vdots & \ddots & \vdots & \vdots\\ 0 & 0 & \cdots & 1 & 0\\ 0 & 0 & \cdots & 0 & 1\\[0.5em] 0 & 0 & \cdots & 0 & 0\\ \vdots & \vdots & \ddots & \vdots & \vdots\\ 0 & 0 & \cdots & 0 & 0\end{bmatrix} \] 
+
+\noindent We then have
+
+\[ E^\ast = \begin{bmatrix} 0_{N\times (L_p-1)} & I_{N\times N} & 0_{N\times (L_p-1)} \end{bmatrix}. \] 
+
+\noindent The action of $E^\ast$ on a vector is simply cutting off $L_p-1$ entries from the left and right sides.
+
+% ]]]
+
+
+% ]]]
+
+
+
+\cite{mallat_2009}
+\cite{strang_1996}
+\cite{beck_2009}
+\cite{hansen_2006}
+
+%\clearpage
+\bibliographystyle{siam}
+\bibliography{adjoint_wavelet.bib}
+
+\end{document}
+
+% vim: set spell:
+% vim: foldmarker=[[[,]]]
