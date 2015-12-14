@@ -7,6 +7,9 @@
 \usepackage{amssymb}
 \usepackage{amsthm}
 \usepackage{array}
+\setcounter{MaxMatrixCols}{20}
+
+\usepackage{mathdots} % for \iddots
 
 \usepackage{graphicx}
 %\usepackage{subfig}
@@ -26,42 +29,42 @@
 
 
 %% Inserting code and syntax highlighting
-%% [[[
-%\usepackage{listings} % like verbatim, but allows for syntax highlighting and more
-%\usepackage{color} % colors
-%\usepackage[usenames,dvipsnames]{xcolor}% More colors
-%\usepackage{caption} % captions
-%\DeclareCaptionFont{white}{\color{white}}
-%\DeclareCaptionFormat{listing}{\colorbox{gray}{\parbox{\textwidth}{#1#2#3}}}
-%\captionsetup[lstlisting]{format=listing,labelfont=white,textfont=white}
-%\usepackage{framed} % put a frame around things
-%
-%% define some custom colors
-%\definecolor{dkgreen}{rgb}{0,0.6,0}
-%\definecolor{lgreen}{rgb}{0.25,1,0}
-%\definecolor{purple}{rgb}{0.35,0.02,0.48}
-%
-%% Some changes to MATLAB/GNU Octave language in listings
-%\lstset{frame=tbrl,
-%    language=Matlab,
-%    aboveskip=3mm,
-%    belowskip=3mm,
-%    belowcaptionskip=3mm,
-%    showstringspaces=false,
-%    columns=flexible,
-%    basicstyle={\small\ttfamily\color{black}},
-%    numbers=left,
-%    numberstyle=\tiny\color{purple},
-%    keywordstyle=\color{dkgreen},
-%    commentstyle=\color{red},
-%    stringstyle=\color{purple},
-%    breaklines=true,
-%    breakatwhitespace=true,
-%    tabsize=4,
-%    rulecolor=\color{black},
-%    morekeywords={string,fstream}
-%}
-%% ]]]
+% [[[
+\usepackage{listings} % like verbatim, but allows for syntax highlighting and more
+\usepackage{color} % colors
+\usepackage[usenames,dvipsnames]{xcolor}% More colors
+\usepackage{caption} % captions
+\DeclareCaptionFont{white}{\color{white}}
+\DeclareCaptionFormat{listing}{\colorbox{gray}{\parbox{\textwidth}{#1#2#3}}}
+\captionsetup[lstlisting]{format=listing,labelfont=white,textfont=white}
+\usepackage{framed} % put a frame around things
+
+% define some custom colors
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{lgreen}{rgb}{0.25,1,0}
+\definecolor{purple}{rgb}{0.35,0.02,0.48}
+
+% Some changes to MATLAB/GNU Octave language in listings
+\lstset{frame=tbrl,
+    language=Matlab,
+    aboveskip=3mm,
+    belowskip=3mm,
+    belowcaptionskip=3mm,
+    showstringspaces=false,
+    columns=flexible,
+    basicstyle={\small\ttfamily\color{black}},
+    numbers=left,
+    numberstyle=\tiny\color{purple},
+    keywordstyle=\color{dkgreen},
+    commentstyle=\color{red},
+    stringstyle=\color{purple},
+    breaklines=true,
+    breakatwhitespace=true,
+    tabsize=4,
+    rulecolor=\color{black},
+    morekeywords={string,fstream}
+}
+% ]]]
 
 
 %My Functions
@@ -228,11 +231,11 @@ We noticed that $W^\ast_{\text{zpd}}=\widetilde{W}_{\text{zpd}}^\dagger$.  This 
 
 % ]]]
 
-\subsection{Adjoint extenstion - zero-padded}
+\subsection{Adjoint extension - zero-padded}
 % [[[
 We will first handle the case of a one-dimensional signal, $x$, with entries $x[0], ..., x[N-1]$.  Let $L_p$ be the length of the wavelet analysis filters.  We extend the signal to have $L_p-1$ zeros on both the right and left sides.
 
-\[ \underbrace{0, ..., 0}_{L_p-1}, x[0], ..., x[N-1], \underbrace{0, ..., 0}_{L_p-1}. \]
+\[ \underbrace{0, ..., 0}_{L_p-1}, x[0], ..., x[N-1], \underbrace{0, ..., 0}_{L_p-1} \]
 
 \noindent We can represent this extension $E$ as a matrix, which will act on the vector $x$:
 
@@ -242,13 +245,59 @@ We will first handle the case of a one-dimensional signal, $x$, with entries $x[
 
 \[ E^\ast = \begin{bmatrix} 0_{N\times (L_p-1)} & I_{N\times N} & 0_{N\times (L_p-1)} \end{bmatrix}. \] 
 
-\noindent The action of $E^\ast$ on a vector is simply cutting off $L_p-1$ entries from the left and right sides.
+\noindent The action of $E^\ast$ on a vector is simply cutting off $L_p-1$ entries from the left and right sides.\\
+
+% ]]]
+
+\subsection{Adjoint extension - half-point symmetric}
+% [[[
+The half-point symmetric extension is discussed in \cite{strang_1996}.  We extend the signal $x$ by reflecting $L_p-1$ entries across the left and right boundaries, with symmetry about the points $1/2$ and $N-1/2$ (hence the name half-point symmetry).  The extended signal has entries the following entries.
+
+\[ \underbrace{x[L_p-1], ..., x[0]}_\text{Left extension}, x[0], ..., x[N-1], \underbrace{x[N-1], ..., x[N+L_p-2]}_\text{Right extension}  \] 
+
+\noindent We can represent this extension $E$ as a matrix, which will act on the vector $x$:
+
+\[ E = \begin{bmatrix} & & \iddots & & &\\ & 1 &&&&\\ 1&&&&&\\1&&&&\\&1&&&&\\&&\ddots&&&\\&&&1&\\&&&&1\\&&&&1\\&&&1&\\&&\iddots&&\end{bmatrix} \] 
+
+The adjoint is
+
+\[ E^\ast = \begin{bmatrix}
+            &&1&1&&&&&&&\\
+            &1&&&1&&&&&&\\
+            \iddots&&&&&\ddots&&&&&\iddots\\
+            &&&&&&1&&&1&\\
+            &&&&&&&1&1&&
+            \end{bmatrix}. \] 
+
+\noindent The action of the adjoint is to fold and sum the length $L_p-1$ ends of the signal back onto the corresponding portion of the original signal.\\
+
+For the extension of a matrix, the extension operator acts in a Kronecker product type fashion.  Below is the relevant portion of \verb|extension_adjoint_2d.m|.
+
+\begin{lstlisting}[language=matlab]
+% this feels like a Kronecker product
+% do the first dimension update (fold and add, like in 1d)
+x = xe(le+1:le+lX(1), :);
+x(1:le, :) = x(1:le, :) + xe(le:-1:1, :);
+x(end-le+1:end, :) = x(end-le+1:end, :) + xe(end:-1:end-le+1, :);
+
+% then do the second dimension update (fold and add)
+xe = x; % alias
+x = x(:, le+1:le+lX(2));
+x(:, 1:le) = x(:, 1:le) + xe(:, le:-1:1);
+x(:, end-le+1:end) = x(:, end-le+1:end) + xe(:, end:-1:end-le+1);
+\end{lstlisting}
+
+
+% ]]]
 
 % ]]]
 
 
-% ]]]
+\section{How close is $W^\ast W$ to the identity?}
+% [[[
+%TODO
 
+% ]]]
 
 
 \cite{mallat_2009}
