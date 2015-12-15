@@ -293,19 +293,43 @@ x(:, end-le+1:end) = x(:, end-le+1:end) + xe(:, end:-1:end-le+1);
 % ]]]
 
 
-\section{How close is $W^\ast W$ to the identity?}
+\section{How close is $W^\ast W$ to $I$?}
 % [[[
 %TODO
+
+\begin{figure}[ht!]
+   \centering
+   \includegraphics[width=\textwidth]{figures/WTW_db2_3_levels_zpd_trim.pdf}
+   \caption*{$W^*W$, db2, 3 levels, zero-padded BCs.}
+\end{figure}
+
+\begin{figure}[ht!]
+   \centering
+   \includegraphics[width=\textwidth]{figures/WTW_db2_3_levels_sym_trim.pdf}
+   \caption*{$W^*W$, db2, 3 levels, half-point symmetric BCs.}
+\end{figure}
+
+\begin{figure}[ht!]
+   \centering
+   \includegraphics[width=\textwidth]{{figures/WTW_bior4.4_3_levels_zpd_trim}.pdf}
+   \caption*{$W^*W$, bior4.4, 3 levels, zero-padded BCs.}
+\end{figure}
+
+\begin{figure}[ht!]
+   \centering
+   \includegraphics[width=\textwidth]{{figures/WTW_bior4.4_3_levels_sym_trim}.pdf}
+   \caption*{$W^*W$, bior4.4, 3 levels, half-point symmetric BCs.}
+\end{figure}
 
 % ]]]
 
 
-\cite{mallat_2009}
-\cite{strang_1996}
-\cite{beck_2009}
-\cite{hansen_2006}
+%\cite{mallat_2009}
+%\cite{strang_1996}
+%\cite{beck_2009}
+%\cite{hansen_2006}
 
-%\clearpage
+\clearpage
 \bibliographystyle{siam}
 \bibliography{adjoint_wavelet.bib}
 

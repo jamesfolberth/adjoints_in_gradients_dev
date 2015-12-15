@@ -2,8 +2,8 @@ function [] = adjoint_pseudoinv()
 % How close is W^*W to I?  What about WW^*?
 
    % dwtmode
-   %dwtmode('sym')
-   dwtmode('ppd')
+   dwtmode('sym')
+   %dwtmode('ppd')
    %dwtmode('zpd')
 
    N = 30;
