@@ -10,8 +10,8 @@ extmode = 'sym'
 
 levels = 2;
 
-wname  = 'db1'
-dwname = 'db1';
+%wname  = 'db1'
+%dwname = 'db1';
 %wname  = 'db2'
 %dwname = 'db2';
 %wname  = 'db3'
@@ -19,8 +19,8 @@ dwname = 'db1';
 %wname  = 'db4'
 %dwname = 'db4';
 
-%wname  = 'bior4.4'
-%dwname = 'rbio4.4';
+wname  = 'bior4.4'
+dwname = 'rbio4.4';
 
 %wname  = 'bior3.5'
 %dwname = 'rbio3.5';
