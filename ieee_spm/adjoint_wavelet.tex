@@ -1,0 +1,102 @@
+\documentclass[journal]{IEEEtran}
+
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsthm}
+
+\usepackage{array}
+
+\usepackage{graphicx}
+
+%\usepackage{hyperref}
+
+%TODO should this be a ``lecture note'' or a ``tips and tricks''?
+
+\begin{document}
+\title{Fast Computation of the Discrete Adjoint Wavelet Transform}
+\author{James~Folberth,
+        Stephen~Becker%
+\thanks{J. Folberth and S. Becker are with the Department
+of Applied Mathematics, University of Colorado at Boulder,
+Boulder, CO, 80309 USA}}
+
+\markboth{IEEE Signal Processing Magazine: Lecture Notes}%
+{J. Folberth and S. Becker: Fast Adjoint Wavelet}
+
+\maketitle
+
+% Don't use math or other special symbols; greek probably okay.
+\begin{abstract}
+   The two canonical operations in wavelet theory are wavelet analysis and synthesis.  Since the discrete wavelet transform is composed of linear operations, one can view analysis and synthesis as linear operators.  In certain image deblurring tasks, optimization algorithms require computation of the action of the adjoint of the wavelet synthesis (or analysis) operator.  In this lecture note, we provide motivation for and a description of a fast method of computing the action of the discrete adjoint wavelet transform, applicable to both discrete wavelet analysis and synthesis.
+\end{abstract}
+
+\subsection{Prerequisites}
+The reader should be familiar with linear algebra and wavelets.  Knowledge of first-order iterative optimization algorithms is beneficial for motivating the fast adjoint computation, but should not be necessary to understand the adjoint computation itself.  We begin by motivating the need for a fast discrete adjoint transform and then turn toward the adjoint transform itself.\\
+
+
+\section{An Image Deblurring Problem}
+Digital images can be blurred through a variety of means.  For example, the optical system can be out of focus and atmospheric turbulence can cause blurring of astronomical images.  The goal of image deblurring is to recover the original, sharp image by posing the blurring process in a mathematical model.\\
+
+In this lecture note, we use the formulation used in \cite{beck_2009}.  It is assumed that the blurring action is known, and the deblurring problem is posed as an optimization problem, where the optimization variables are the wavelet coefficients of the recovered image.  Let $\mathcal{R}$ be a known blurring operator.  For instance, $\mathcal{R}$ could represent a Gaussian point spread function (PSF) under symmetric (also called reflexive) boundary conditions \cite{hansen_2006}.  Again, this model assumes that we know the type of blurring that occurred, which resulted in the observed blurred image.\\
+
+Let $\mathcal{W}$ represent a multi-level wavelet synthesis operator with suitable boundary conditions.  Let $b$ be the observed, blurry image.  The image deblurring task can now be posed as the following optimization problem over $x$, a vector of wavelet coefficients:
+
+\begin{equation}
+\label{eq:syn_problem}
+\min_x \|\mathcal{RW}x-b\|_2^2 + \lambda \|x\|_1,
+\end{equation}
+
+\noindent where $\|\cdot\|_2$ represents the standard $\ell_2$-norm, and $\|\cdot\|_1$ is the $\ell_1$-norm.  It is the hope that an optimal set of wavelet coefficients $x^\ast$ will be such that the image $\mathcal{W}x^\ast$ is approximates the original, sharp image.  By applying $\mathcal{R}$ to $\mathcal{W}x^\ast$, we are blurring the recovered image to approximate the observed, blurry image $b$.\\
+
+%In (\ref{eq:syn_problem}), $\lambda$ is a scalarization parameter that adjusts the relative importance of the accuracy term $\|\mathcal{RW}x-b\|_2^2$ over the sparsity term $\|x\|_1$.  To favor sparsity in the wavelet domain, one should increase $\lambda$.\\
+
+A few popular methods of finding approximate solutions to (\ref{eq:syn_problem}) include FISTA \cite{beck_2009} and NESTA \cite{becker_2011}.  FISTA is a fast proximal gradient method which separates the objective of (\ref{eq:syn_problem}) into two pieces: $f(x)=\|\mathcal{RW}x-b\|_2^2$, which is smooth, and $g(x) = \lambda\|x\|_1$ which is non-smooth, but has an efficiently computable proximal function.  To apply a fast proximal gradient method like FISTA, we need only the gradient $\nabla f(x)$ and the proximal function of $g(x)$, which in this case is the soft-threshold, or shrinkage, operation.  We refer the reader to \cite{beck_2009} and the references therein for an explanation of (fast) proximal gradient methods.\\
+
+For the problem (\ref{eq:syn_problem}), we have
+
+\begin{equation}
+\label{eq:f_grad}
+\nabla f(x) = 2\mathcal{W}^\ast\mathcal{R}^\ast(\mathcal{RW}x-b).
+\end{equation}
+
+\noindent We use the notation $\mathcal{W}^\ast$ to denote the adjoint of $\mathcal{W}$.  Note that FISTA typically requires many evaluations of $\nabla f(x)$, and that the dominant cost is the application of $\mathcal{W}^\ast,~\mathcal{R}^\ast,~\mathcal{R},$ and $\mathcal{W}$.  Thus, the need for efficiently applying these operators is apparent.\\
+
+In the case of a PSF, we can apply $\mathcal{R}$ and $\mathcal{R}^\ast$ efficiently in the Fourier domain via the FFT \cite{beck_2009, hansen_2006}.  Wavelet software packages (e.g. \cite{matlab_wt_2015}) implement fast discrete wavelet analysis and synthesis.  The purpose of this lecture note is to show a fast method of applying $\mathcal{W}^\ast$, thus resulting in a fast evaluation of $\nabla f(x)$.\\
+
+
+\subsection{Analysis Formulation}
+We note here that there is an alternative formulation of the image deblurring problem.  The formulation (\ref{eq:syn_problem}), where $x$ is a vector of wavelet coefficients, is called the synthesis form.  We can also consider the problem in analysis form:
+
+\begin{equation}
+\label{eq:ana_form}
+\min_y \|\mathcal{R}y-b\|_2^2 + \lambda \|\mathcal{W}^\dagger y\|_1.
+\end{equation}
+
+\noindent We use $\mathcal{W}^\dagger$ to denote the Moore-Penrose pseudoinverse of $\mathcal{W}$; this is the standard operation of wavelet analysis.  In the analysis form, the optimization variable $y$ is an image.  An optimal solution $y^\ast$ should be a good approximation of the original, sharp image.\\
+
+If the wavelet synthesis operator is orthogonal, so that ${\mathcal{W}^\ast=\mathcal{W}^\dagger=\mathcal{W}^{-1}}$, we then have ${x=\mathcal{W}^{-1}y}$.  Moreover, the synthesis and analysis formulations are equivalent, in the sense that an optimal solution of one formulation is readily obtained from an optimal solution of the other.\\
+
+%Wavelet software packages (e.g. \cite{matlab_wt_2015}) implement fast wavelet analysis and synthesis operators, which we can apply to 
+
+
+% References
+% copied from ../notes/adjoint_wavelet_notes.bbl
+% [[[
+\input{../notes/adjoint_wavelet_notes.bbl}
+% ]]]
+
+% if you will not have a photo at all:
+\begin{IEEEbiographynophoto}{James Folberth}
+Biography text here.
+\end{IEEEbiographynophoto}
+
+% if you will not have a photo at all:
+\begin{IEEEbiographynophoto}{Stephen Becker}
+Biography text here.
+\end{IEEEbiographynophoto}
+
+\end{document}
+
+% vim: set spell:
+% vim: foldmarker=[[[,]]]
