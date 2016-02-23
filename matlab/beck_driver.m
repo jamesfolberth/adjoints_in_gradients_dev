@@ -1,9 +1,9 @@
-function [] = driver()
+function [Xout] = beck_driver()
 
 addpath('./beck_FISTA_matlab_files/HNO')
 
-%X = double(imread('cameraman.pgm'));
-X = double(imread('cameraman_resize.pgm'));
+X = double(imread('cameraman.pgm'));
+%X = double(imread('cameraman_resize.pgm'));
 X = X/255; % scale to [0,1]
 
 [P,center] = psfGauss([9,9],4);
@@ -28,7 +28,7 @@ Bobs=B + 1e-3*randn(size(B));
 %lambda = 1e-4; % used in B+T's example code
 lambda = 2e-5; % used in FISTA SIAM paper
 
-pars.MAXITER=20; % do this many iterations
+pars.MAXITER=100; % do this many iterations
 pars.fig=0; % suppress the figure while running FISTA
 %pars.BC='periodic';
 pars.B = 1; % TODO JMF need to look this up for CDF 9/7 wavelets
@@ -41,10 +41,12 @@ extmode = 'sym'
 
 levels = 3;
 
-wname  = 'db1'
-dwname = 'db1';
-%wname  = 'bior4.4'
-%dwname = 'rbio4.4';
+%wname  = 'db1'
+%dwname = 'db1';
+wname  = 'db5'  % filter length 9
+dwname = 'db5'; 
+%wname  = 'bior4.4' % filter lengths 9 and 7
+%dwname = 'rbio4.4'; 
 
 L = build_wavedec_levels_2d(size(Bobs), levels, wname, extmode);
 
@@ -52,7 +54,8 @@ WAn = @(Y) wavelet_analysis_2d(Y, wname, extmode, levels);
 WSy = @(X) wavelet_synthesis_2d(X, L, size(Bobs), wname, extmode, levels);
 WSyAd = @(Y) wavelet_synthesis_adjoint_2d(Y, wname, dwname, extmode, levels);
 
-[Xout,fun_all]=deblur_dwt_FISTA_trans_direct(Bobs,P,center,WAn,WSy,WSyAd,lambda,pars);
+%[Xout,fun_all]=deblur_dwt_FISTA_trans_direct(Bobs,P,center,WAn,WSy,WSyAd,lambda,pars);
+[Xout,fun_all,X_iter]=deblur_dwt_FISTA_trans_direct(Bobs,P,center,WAn,WSy,WSyAd,lambda,pars);
 
 % show the original and recovered images
 figure(2)
@@ -62,6 +65,21 @@ title('Original')
 subplot(1,2,2)
 imshow(Xout,[])
 title('Recovered')
+
+fprintf(1, 'recovery l2-error (rel) = %e\n', norm(Xout-Bobs,'fro')/norm(Bobs,'fro'));
+fprintf(1, 'recovery nnz (%%nnz) = %d (%3.2f)\n', sum(abs(X_iter(:))>0),sum(abs(X_iter(:))>0)/numel(X_iter)*100);
+%fprintf(1, 'recovery %%(big coeffs) = %3.2f\n', sum(abs(X_iter(:)) > 1e-4)/numel(X_iter)*100);
+
+% show the recovered image and some other info
+%figure(3)
+%imshow(Xout,[])
+%title(sprintf('Recovered - iter=%d, wname=''%s'', extmode=''%s''', pars.MAXITER, wname, extmode));
+
+% Plot the decay of non-zero values in wavelet coeffs
+figure(4);
+wc = sort(abs(X_iter(:)),'descend');
+semilogy(wc);
+axis([0 1e5 1e-10 1e2]);
 
 end
 

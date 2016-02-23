@@ -1,4 +1,4 @@
-function [X_out,fun_all]=deblur_dwt_FISTA_trans_direct(Bobs,P,center,WAn,WSy,WSyAd,lambda,pars)
+function [X_out,fun_all,X_iter]=deblur_dwt_FISTA_trans_direct(Bobs,P,center,WAn,WSy,WSyAd,lambda,pars)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %This function implements FISTA for solving the linear inverse problem with 
 % an orthogonal l1 wavelet regularizer and either reflexive or periodic boundary
@@ -82,7 +82,7 @@ else
 end
 
 % If there are two output arguments, initalize the function values vector.
-if (nargout==2)
+if (nargout>=2)
     fun_all=[];
 end
 
