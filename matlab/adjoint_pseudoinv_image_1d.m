@@ -5,7 +5,7 @@ function [] = adjoint_pseudoinv_1d()
 dwtmode('zpd', 'nodisp');
 
 extmode = 'zpd'
-%extmode = 'sym'
+extmode = 'sym'
 %extmode = 'ppd'
 
 levels = 3;
@@ -18,6 +18,9 @@ levels = 3;
 %dwname = 'db3';
 %wname  = 'db4'
 %dwname = 'db4';
+
+%wname  = 'bior2.2'
+%dwname = 'rbio2.2'; 
 
 wname  = 'bior4.4'
 dwname = 'rbio4.4';
@@ -47,7 +50,7 @@ for lx=min_sig_len
    Id = eye(lx);
    Ir = eye(size(W,1));
    
-   diag(Wadj*W)
+   %diag(Wadj*W)
 
    imagesc(Wadj*W); colorbar() % analysis -> synthesis
    title('W^*W')

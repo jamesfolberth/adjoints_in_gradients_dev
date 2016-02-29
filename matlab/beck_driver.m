@@ -41,10 +41,10 @@ extmode = 'sym'
 
 levels = 3;
 
-%wname  = 'db1'
-%dwname = 'db1';
-wname  = 'db5'  % filter length 9
-dwname = 'db5'; 
+wname  = 'db1'
+dwname = 'db1';
+%wname  = 'db5'  % filter length 9
+%dwname = 'db5'; 
 %wname  = 'bior4.4' % filter lengths 9 and 7
 %dwname = 'rbio4.4'; 
 
@@ -71,15 +71,15 @@ fprintf(1, 'recovery nnz (%%nnz) = %d (%3.2f)\n', sum(abs(X_iter(:))>0),sum(abs(
 %fprintf(1, 'recovery %%(big coeffs) = %3.2f\n', sum(abs(X_iter(:)) > 1e-4)/numel(X_iter)*100);
 
 % show the recovered image and some other info
-%figure(3)
-%imshow(Xout,[])
+figure(3)
+imshow(Xout,[])
 %title(sprintf('Recovered - iter=%d, wname=''%s'', extmode=''%s''', pars.MAXITER, wname, extmode));
 
 % Plot the decay of non-zero values in wavelet coeffs
-figure(4);
-wc = sort(abs(X_iter(:)),'descend');
-semilogy(wc);
-axis([0 1e5 1e-10 1e2]);
+%figure(4);
+%wc = sort(abs(X_iter(:)),'descend');
+%semilogy(wc);
+%axis([0 1e5 1e-10 1e2]);
 
 end
 
@@ -125,7 +125,7 @@ function [Y] = wavelet_synthesis_2d(X, L, lY, wname, extmode, levels)
    dwtmode('zpd', 'nodisp'); % wavedec2 doesn't take the 'mode' arg like (i)dwt2
    Ye = waverec2(X, L, wname);
    %lY = L(end,:);  % L coming from our build_wavedec_levels accounts for extension!
-   Y = extension_inv_2d(Ye, lY, lf-1, extmode);
+   Y = extension_pinv_2d(Ye, lY, lf-1, extmode);
 
 end
 
@@ -146,9 +146,8 @@ function [X] = wavelet_synthesis_adjoint_2d(Y, wname, dwname, extmode, levels)
    lf = length(Lo_D);
   
    dwtmode('zpd', 'nodisp'); % wavedec2 doesn't take the 'mode' arg like (i)dwt2
-   %TODO extension_adjoint_inv_2d then wavedec2(dwname)?
-   %Ye = extension_adjoint_inv_2d(Y, lY, lf-1, extmode);%XXX ???
-   Ye = wextend('2D', extmode, Y, lf-1, 'b');
+   %Ye = wextend('2D', extmode, Y, lf-1, 'b'); % temp: this is "close" to adjoint of pinv
+   Ye = extension_pinv_adjoint_2d(Y, lY, lf-1, extmode);
    [X,L] = wavedec2(Ye, levels, dwname);
 
 end

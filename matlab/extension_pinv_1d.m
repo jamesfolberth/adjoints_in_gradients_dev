@@ -1,7 +1,7 @@
-function [x] = extension_inv_1d(xe, lx, le, extmode)
-% extension_inv_1d - inverse of 1d signal extension operator
+function [x] = extension_pinv_1d(xe, lx, le, extmode)
+% extension_pinv_1d - pseudoinverse of 1d signal extension operator
 % 
-% x = extension_inv_1d(xe, lx, le, extmode) applies the inverse of the 1d
+% x = extension_pinv_1d(xe, lx, le, extmode) applies the pseudoinverse of the 1d
 % signal extension operator to the vector xe.  lx is the length of the original
 % signal.  le is the length of the extension, which is applied to both sides.
 % extmode is a string containing the signal extension mode (a la wextend).
