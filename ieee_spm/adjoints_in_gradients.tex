@@ -20,6 +20,7 @@
 %\usepackage{hyperref}
 
 \newcommand{\opn}[1]{\operatorname{#1}}
+\newcommand{\reals}{\mathbb{R}}
 
 %TODO should this be a ``lecture note'' or a ``tips and tricks''?
 
@@ -236,7 +237,7 @@ The double sided half-point symmetric extension reflects the signal about its bo
 
 \[ \left(\mathcal{E}_\text{sym}^\dagger\right)^\ast = \begin{bmatrix} & \iddots \\ 1/2&&&&&\\1/2&&&&\\&\ddots&&&&&&\\&&1/2&\\&&&1\\&&&&\ddots\\&&&&&1\\&&&&&&1/2\\&&&&&&&\ddots\\&&&&&&&&1/2\\&&&&&&&&1/2\\&&&&&&&\iddots\\\end{bmatrix}. \]
 
-\noindent If $N \le 2(L_p-1)$, the form of the pseudoinverse is slightly different, with some of the $1/2$ terms becoming $1/3$; both cases are considered in our implementation.
+\noindent If $N \le 2(L_p-1)$, the form of the pseudoinverse is slightly different, with some of the $1/2$ terms becoming $1/3$; both cases are considered in our implementation.\\
 
 
 \begin{figure}
@@ -271,22 +272,25 @@ Figure \ref{fig:cameraman_200_bior4.4_sym} shows the deblurred cameraman image a
 % ]]]
 
 %TODO might have to cut this out if the problem doesn't recover things well
+%TODO perhaps introduce problem as min \sum_i \|x_i - h_i\ast s\|_2^2 + \|h_i\|_1 + \|s\|_1
+%     then introduce the linear operator \mathcal{A}
 \section{Example 2: Blind Channel Estimation}
 % [[[
-Another application where an interesting adjoint is involved in the gradient computation is in blind channel estimation.  In blind channel estimation, a single source sends an unknown signal over multiple channels with unknown response.  Observers collect the output of each channel and collectively attempt to determine the source signal and the channel impulse response from each channel.  Let $s$ be the unknown source signal and $h_i$ the channel impulse response of the $i$th channel.  Then the output of the $i$th channel is
+Another application where an interesting adjoint is involved in the gradient computation is in blind channel estimation.  In blind channel estimation, a single source sends an unknown signal over multiple channels with unknown response.  Observers collect the output of each channel and collectively attempt to determine the source signal and the channel impulse response from each channel.  Let $s$ be the unknown source signal of length $N$ and $h_i$ the channel impulse response of the $i$th channel, each of length $K$.  Then the output of the $i$th channel is
 
-\[ x_i = h_i\ast s. \] 
+\[ x_i = h_i\ast s, \] 
 
-\noindent In this form, we must solve a multitude of nonlinear equations in the components of $s$ and each $h_i$.  Also note that there is both a magnitude and phase ambiguity in $h_i$ and $s$, since we can multiply $h_i$ by $\alpha\neq 0$ and divide $s$ by $\alpha$, leaving $x_i$ unchanged.\\
+\noindent and will be of length $K+N-1$.  In this form, we must solve a multitude of nonlinear equations in the components of $s$ and each $h_i$.  Also note that there is both a magnitude and phase ambiguity in $h_i$ and $s$, since we can multiply $h_i$ by $\alpha\neq 0$ and divide $s$ by $\alpha$, leaving $x_i$ unchanged.\\
 
 Recently Ahmed et al. \cite{ahmed_2013} published a paper considering blind deconvolution via convex optimization.  Crucial to their method is the following observation.  The convolution $h_i\ast s$ can be formed as a linear operation on the elements of the rank-1 matrix $h_is^T$:
 
 \[ h_i\ast s = \mathcal{A}(h_is^T). \] 
 
-\noindent This linear operator is a little bit odd in that it maps matrices to vectors, and so its adjoint is not quite obvious.
+\noindent The operation $x_i=\mathcal{A}$ acts on the $K\times N$ matrix $h_is^T$ by summing each antidiagonal, producing an element of $x_i$.  This action is illustrated in Figure \ref{fig:action_of_A}.\\
 
 \begin{figure}
 \begin{tikzpicture}[baseline=(hs.center)]
+   % [[[
    % based on figure from Romberg et al. "Multichannel blind deconvolution..."
    % and examples from http://www.texample.net/tikz/examples/mnemonic-rule-for-matrix-determinant/
    % http://tex.stackexchange.com/questions/83046/position-two-stacked-tikz-matrices
@@ -300,28 +304,61 @@ Recently Ahmed et al. \cite{ahmed_2013} published a paper considering blind deco
     h_i[5]s[0] & h_i[5]s[1] & h_i[5]s[2] & h_i[5]s[3] \\
     h_i[6]s[0] & h_i[6]s[1] & h_i[6]s[2] & h_i[6]s[3] \\
     h_i[7]s[0] & h_i[7]s[1] & h_i[7]s[2] & h_i[7]s[3] \\
+    \vdots & \vdots & \vdots & \vdots\\
    };
 
-   \begin{scope}[xshift=-35mm,yshift=-16mm]
+   \begin{scope}[xshift=-35mm,yshift=-3.5mm]
    \matrix (y) [matrix of math nodes, nodes = {node style ge},, column sep=0mm, row sep=-2mm]
    {y[0]\\
     y[1]\\
     y[2]\\
     y[3]\\
+    y[4]\\
+    y[5]\\
+    y[6]\\[-2mm]
     \vdots\\
    };
    \end{scope}
 
+   \draw [thick,->,>=stealth,shorten >=4mm,shorten <=-4mm,color=blue] (hs-1-1.center) to ($(y-1-1.center) + (0mm,-1mm)$); % this is a hack, but it's quite close
+   \draw [thick,->,>=stealth,shorten >=-9mm,shorten <=-4mm,color=blue] (hs-1-2.center) to (hs-2-1.center);
+   \draw [thick,->,>=stealth,shorten >=-9mm,shorten <=-4mm,color=blue] (hs-1-3.center) to (hs-3-1.center);
    \draw [thick,->,>=stealth,shorten >=-9mm,shorten <=-4mm,color=blue] (hs-1-4.center) to (hs-4-1.center);
    \draw [thick,->,>=stealth,shorten >=-9mm,shorten <=-4mm,color=blue] (hs-2-4.center) to (hs-5-1.center);
    \draw [thick,->,>=stealth,shorten >=-9mm,shorten <=-4mm,color=blue] (hs-3-4.center) to (hs-6-1.center);
    \draw [thick,->,>=stealth,shorten >=-9mm,shorten <=-4mm,color=blue] (hs-4-4.center) to (hs-7-1.center);
+   % ]]]
 \end{tikzpicture}
 \caption{How $x_i$ is formed via $\mathcal{A}(h_is^T)$.  Adapted from \cite{romberg_2013}.}%TODO
+\label{fig:action_of_A}
 \end{figure}
 
+The operator $\mathcal{A}$ is a little bit strange in that it maps matrices to vectors, so its adjoint is not quite obvious (i.e. we cannot directly compute the conjugate transpose of $\mathcal{A}$).  However, we can directly apply the defining relation for the adjoint.  We consider an arbitrary matrix $X\in\reals^{K\times N}$ and vector $y\in\reals^{K+N-1}$.  The adjoint is defined via
+
+\begin{equation}
+   \label{eq:A_adjoint_def}
+   \left\langle \mathcal{A}(X),y \right\rangle = \left\langle X, \mathcal{A}^\ast(y)\right\rangle \quad \forall X,y.
+\end{equation}
+
+\noindent Note that the inner product on the left-hand side of equation \ref{eq:A_adjoint_def} is the usual vector inner product on $\reals^{K+N-1}$, while the inner product on the right-hand side is the usual matrix inner product on $\reals^{K\times N}$.  We can explicitly write down $\mathcal{A}(X)$ and expand the vector inner product.
+
+\[ \left\langle \mathcal{A}(X),y\right\rangle = \sum_{k=0}^{K+N-2}y[k] \left(\sum_{n=n_1(k)}^{n_2(k)} X[n,k-n]\right) \] 
+
+\noindent where we have defined the bounds $n_1(k) = {\max\{0,k+1-N\}}$ and $n_2(k) = {\min\{K-1,k\}}$.  If $X=h_is^T$, then the inner summation computes the $k$th term of the convolution $h_i\ast s$.  We can expand the first few terms of the vector inner product and keep track of the terms multiplying $y[k]$.
+
+\begin{align*}
+   \left\langle\mathcal{A}(X),y\right\rangle &= y[0]X[0,0] + y[1]\left(X[0,1]+X[1,0]\right)\\
+                                             &\,+ y[2]\left(X[0,2] + X[1,1] + X[2,0]\right) + \cdots.\\
+\end{align*}
+
+\noindent Now notice that $X[k,n]$ is always multiplied by $y[k+n]$.  This means that we can isolate $X[k,n]$ and write
+
+\[ \left\langle\mathcal{A}(X),y\right\rangle = \sum_{k=0}^{K-1}\sum_{n=0}^{N-1} X[k,n]y[k+n] = \left\langle X,\mathcal{A}^\ast(y)\right\rangle. \] 
+
+\noindent Define the $K\times N$ Hankel matrix by $Y[k,n] = y[k+n]$, and then we have the adjoint $\mathcal{A}^\ast(y) = Y$!
 
 % ]]]
+
 
 % References
 %TODO make a separate .bib
