@@ -188,41 +188,6 @@
 \end{frame}
 
 \begin{frame}{Proximal Gradient Method}
-   \[ f(x) = \dfrac{1}{2}\|\mathcal{A}x-b\|_2^2, \quad g(x) = \lambda \|x\|_1. \] 
-
-   We can use a variant of simple gradient descent to solve the model problem
-
-   \[ \min_x f(x) + g(x). \] 
-
-   %XXX dropping k step notation for brevity.  x^+ is the new x after the prox grad step
-   Proximal gradient method:
-   \[ x^{+} = \operatorname{prox}_{t g}\left(x - t\nabla f(x)\right), \text{ step size $t>0$}. \] 
-   
-   Proximity function: 
-   \[ \operatorname{prox}_g(x) \defeq \argmin_u\left(g(u) + \dfrac{1}{2}\|u-x\|_2^2\right). \] 
-
-\end{frame}
-
-\begin{frame}{Proximal Gradient Method}
-   %\[ x^{(k)} = \operatorname{prox}_{t_k g}\left(x^{(k-1)} - t_k\nabla f(x^{(k-1)})\right). \] 
-   \[ \operatorname{prox}_g(x) \defeq \argmin_u\left(g(u) + \dfrac{1}{2}\|u-x\|_2^2\right). \] 
-
-   For $g(x) = \lambda\|x\|_1$, proximity operator is ``shrinkage'':
-
-   \[ \left\{\operatorname{prox}_g(x)\right\}_i = \left\{\begin{array}{ll} x_i-\lambda & x_i \ge \lambda\\0 & |x_i| < \lambda\\ x_i + \lambda & x_i\le -\lambda\end{array}\right.. \] 
-
-   %XXX dropping k step notation for brevity.  x^+ is the new x after the prox grad step
-   Proximal gradient step minimizes $g(u)$ plus quadratic local model of $f(u)$ about $x$:
-
-   \begin{align*}
-      x^+ &= \operatorname{prox}_{t g}\left(x - t\nabla f(x)\right)\\
-              %&= \argmin_u\left(g(u) + \dfrac{1}{2t}\left\|u-x+t\nabla f(x)\right\|_2^2\right)\\
-              &= \argmin_u\left(g(u) + f(x) + \left\langle \nabla f(x), u-x\right\rangle + \dfrac{1}{2t}\|u-x\|_2^2\right).
-   \end{align*}
-
-\end{frame}
-
-\begin{frame}{Proximal Gradient Method}
    \[ \min_x \dfrac{1}{2}\|\mathcal{A}x-b\|_2^2 + \lambda \|x\|_1. \] 
 
    \[ \nabla f(x) = \mathcal{A}^\ast\left(\mathcal{A}x-b\right), \quad x^{+} = \operatorname{prox}_{t g}\left(x - t\nabla f(x)\right)\] 
@@ -417,6 +382,8 @@
    
    \noindent Can we recover source and channel IRs?\\
 
+   Let's restrict ourselves to $h_i$ and $s$ real-valued.
+
 \end{frame}
 
 \begin{frame}{BCE Problem}
@@ -500,158 +467,242 @@
 
 \end{frame}
 
-%TODO show adjoint derivation (be brief!)
-%TODO Hankel -> Toeplitz -> Circulant -> FFT!
-%TODO show (stolen) picture of recovery
+\begin{frame}{Adjoint of $\mathcal{A}$}
+   Adjoint is defined via
+   \[ \left\langle \mathcal{A}(X), y \right\rangle = \langle X,\mathcal{A}^\ast(y)\rangle \quad \forall X \forall y. \] 
+   
+   Plug in explicit form of $\mathcal{A}(X)$:
+
+   \begin{align*}
+   \left\langle \mathcal{A}(X),y\right\rangle &= \sum_{n=0}^{K+N-2}y[n] \left(\sum_{k=k_1(n)}^{k_2(n)} X[k,n-k]\right)\\
+                                              &= y[0]X[0,0] + y[1]\left(X[0,1]+X[1,0]\right)\\
+                                              &\,+ y[2]\left(X[0,2] + X[1,1] + X[2,0]\right) + \cdots.\\
+   \end{align*}
+
+   Notice that $X[i,j]$ is always multiplied by $y[i+j]$.  Defines Hankel matrix!
+
+\end{frame}
+
+\begin{frame}{Adjoint of $\mathcal{A}$}
+   \begin{align*}
+      \left\langle \mathcal{A}(X),y\right\rangle &= \sum_{n=0}^{K+N-2}y[n] \left(\sum_{k=k_1(n)}^{k_2(n)} X[k,n-k]\right)\\
+                                                 &= \sum_{i=0}^{K-1}\sum_{j=0}^{N-1} X[i,j]y[i+j]\\
+                                                 &= \sum_{i=0}^{K-1}\sum_{j=0}^{N-1} X[i,j]Y[i,j]\\
+                                                 &= \left\langle X, Y\right\rangle = \left\langle X, \mathcal{A}^\ast(y)\right\rangle,
+   \end{align*}
+
+   where we define the $K\times N$ Hankel matrix $Y$ by $Y[i,j] = y[i+j]$ so
+
+   \[ \mathcal{A}^\ast(y) = Y. \] 
+
+\end{frame}
+
+\begin{frame}{Hankel matrix-vector product}
+   The Hankel matrix $Y$ is dense but structured:
+
+   \[ Y = \begin{bmatrix} y[0] & y[1] & y[2] & y[3] & y[4]\\
+                          y[1] & y[2] & y[3] & y[4] & y[5]\\
+                          y[2] & y[3] & y[4] & y[5] & y[6]\\\end{bmatrix}. \] 
+   
+   Reorder columns to get Toeplitz matrix:
+   \[\scalemath{0.9}{ T = YP = \begin{bmatrix}
+                               y[4] & y[3] & y[2] & y[1] & y[0]\\
+                               y[5] & y[4] & y[3] & y[2] & y[1]\\
+                               y[6] & y[5] & y[4] & y[3] & y[2]\\\end{bmatrix}, 
+              \quad P = \begin{bmatrix} 0 & 0 & 0 & 0 & 1\\
+                                        0 & 0 & 0 & 1 & 0\\
+                                        0 & 0 & 1 & 0 & 0\\
+                                        0 & 1 & 0 & 0 & 0\\
+                                        1 & 0 & 0 & 0 & 0\\ \end{bmatrix}. }\] 
+\end{frame}
+
+\begin{frame}{Hankel matrix-vector product}
+   Embed Toeplitz matrix in circulant matrix:
+   
+   % http://tex.stackexchange.com/questions/33519/vertical-line-in-matrix-using-latexit
+   \[ C = \left[\begin{array}{@{}ccccc|cc@{}}
+            y[4] & y[3] & y[2] & y[1] & y[0] & y[6] & y[5]\\
+            y[5] & y[4] & y[3] & y[2] & y[1] & y[0] & y[6]\\
+            y[6] & y[5] & y[4] & y[3] & y[2] & y[1] & y[0]\\
+            \hline
+            y[0] & y[6] & y[5] & y[4] & y[3] & y[2] & y[1]\\
+            y[1] & y[0] & y[6] & y[5] & y[4] & y[3] & y[2]\\
+            y[2] & y[1] & y[0] & y[6] & y[5] & y[4] & y[3]\\
+            y[3] & y[2] & y[1] & y[0] & y[6] & y[5] & y[4]\\
+   \end{array}\right]. \] 
+
+   \noindent We can do a fast circulant mat-vec via the FFT!  Thus, we can compute and apply $\mathcal{A}^\ast(y)$ rapidly.
+
+\end{frame}
+
+%XXX this recovery is cherry picked!  Lots of parameters to tune!
+\begin{frame}{Example estimation}
+   Still a work in progress!\\
+   \begin{center}
+      \includegraphics[width=\textwidth]{figures/bce_rec_02_h_trim.pdf}
+   \end{center}
+\end{frame}
+
+\begin{frame}{Example estimation}
+   Still a work in progress!\\
+   \begin{center}
+      \includegraphics[width=\textwidth]{figures/bce_rec_02_s_trim.pdf}
+   \end{center}
+\end{frame}
+
 
 % ]]]
 
 \begin{frame}{Thanks!}
+   We can now compute the adjoint wavelet transform:
+
+   \[ \mathcal{W}^\ast = \tilde{\mathcal{W}}_\text{zpd}^\dagger(\mathcal{E}^\dagger)^\ast. \] 
+   
+   Interesting adjoint in blind channel estimation problem:
+
+   \[ x = h\ast s = \mathcal{A}(hs^T). \] 
    References:
+   \begin{itemize}
+      \item A. Beck, M. Teboulle, \emph{A Fast Iterative Shrinkage-Thresholding Algorithm for Linear Inverse Problems}, SIAM Journal on Imaging Science, (2009).
+      \item A. Ahmed, B. Recht, J. Romberg, \emph{Blind Deconvolution using Convex Programming}, IEEE Trans. on Info. Theory, (2013).
+   \end{itemize}
 \end{frame}
 
-%\begin{frame}{Extra Slides}
-%   %TODO might want to put prox grad details in here.
-%   %TODO prox grad and FISTA side-by-side?
-%   %TODO why not use analysis formulation of deblurring problem?
-%   %TODO original cameraman and recovered image side-by-side
-%\end{frame}
+%XXX Extra slides
 
+% some proximal gradient details
 % [[[
-%\begin{frame}{Ideas} Dr. Becker and I have been working on some ``warm-up'' problems this semester.  \begin{itemize} \item Can we use Nesterov accelerated gradient descent to train $K$-means or GMM's faster than the standard method?  \item The adjoint of a wavelet operator is required for some optimization problems, but is not provided by wavelet toolboxes.  Can we find a fast (e.g. $\mathcal{O}(N)$) way to compute its action?  \end{itemize} \end{frame} \section{$K$-means} \begin{frame}{$K$-means} \begin{figure}[ht!] \includegraphics[width=\textwidth]{figures/kmeans_22130988_true_labels_trim.pdf} \end{figure} \begin{itemize} \item $K$-means is a simple clustering algorithm.  True problem is NP hard, so we relax and find a local solution.  \end{itemize} \end{frame} \begin{frame}{$K$-means} \begin{figure}[ht!] \includegraphics[width=\textwidth]{figures/kmeans_22130988_hard_em!_trim.pdf} \end{figure} \begin{itemize} \item Initialization is very important (kmeans++ provides good error bounds) \end{itemize} \end{frame} \begin{frame}{$K$-means as a GMM} %$K$-means is a special case of a full Gaussian mixture model (GMM).\\ Cluster the data by maximizing the log-likelihood of the data: \[ \ell(\theta) = \sum_{n=1}^N \log\left(\sum_{k=1}^K \dfrac{1}{K}\mathcal{N}(\mathbf{x}_n|\mu_k,\sigma^2I)\right). \] \begin{columns} \begin{column}{0.5\textwidth} ``hard'' expectation maximization \[ z_i^\ast = \arg\min_k \|\mathbf{x}_i-\mu_k\|_2^2 \] \[ \mu_k \gets \dfrac{1}{N_k} \sum_{i:z_i=k} \mathbf{x}_i. \] 
-%      \end{column}
-%      \begin{column}{0.5\textwidth}
-%         ``soft'' expectation maximization
-%         \[ r_{ik} \propto e^{-\|\mathbf{x}_i-\mu_k\|_2^2/(2\sigma^2)}\] 
-%         \[ z_i^\ast = \arg\max_k r_{ik} \] 
-%         \[ \mu_k \gets \dfrac{1}{r_k}\sum_{i=1}^N r_{ik}\mathbf{x}_i, \quad r_k = \sum_{i=1}^N r_{ik}. \] 
-%      \end{column}
-%   \end{columns}
-%
-%\end{frame}
-%
-%\begin{frame}{$K$-means and gradient descent}
-%   \begin{itemize}
-%      \item Instead of expectation maximization (the standard algorithm), we could try to use gradient descent.\\
-%
-%      \item This works, and for a certain step size ($\eta_k = \sigma^2/r_k$), gradient descent is equivalent to expectation maximization.  GD is slow, taking $\mathcal{O}(1/\epsilon)$ iterations to reach suboptimality $\epsilon$.
-%
-%      \item Nesterov's accelerated gradient is optimal, in a certain sense, and takes $\mathcal{O}(1/\sqrt{\epsilon})$ iterations to reach suboptimality $\epsilon$, for certain problems.
-%
-%      \item The ``soft'' $K$-means problem is non-convex and doesn't have a Lipschitz gradient.  Existing convergence proofs don't apply.  Works well in practice, though!
-%   \end{itemize}
-%\end{frame}
-%
-%\begin{frame}{A Nesterov accelerated gradient method}
-%   Nesterov acceleration is super cheap; basically the same cost as gradient descent.\\[1em]
-%
-%   \begin{algorithm}[H] % force it to stay in its place with `H'
-%   \caption{Nesterov's second method}
-%   \begin{algorithmic}
-%      \State Given initial point $x^{(0)}$.
-%      \State $v^{(0)}\gets x^{(0)}$
-%      \For{k\ge 1}
-%         \State $\theta^{(k)} = \frac{2}{k+1}$
-%         \State $y\gets (1-\theta^{(k)})x^{(k-1)} + \theta^{(k)}v^{(k-1)}$
-%         \State $v^{(k)} \gets v^{(k-1)} + \dfrac{\eta^{(k)}}{\theta^{(k)}}\nabla\ell(y)$
-%         \State $x^{(k)} \gets (1-\theta^{(k)})x^{(k-1)} + \theta^{(k)}v^{(k)}$
-%      \EndFor
-%   \end{algorithmic}
-%\end{algorithm}
-%\end{frame}
-%
-%
-%\begin{frame}{Performance profiles: $d=3, K=40, N=3000$}
-%   \begin{figure}[ht!]
-%      \includegraphics[width=\textwidth]{/home/james/research/mm_methods/accelerated_em/unwatched/n=3_K=40_N=3000_iter.pdf}
-%   \end{figure}
-%\end{frame}
-%
-%\begin{frame}{Performance profiles: $d=40, K=40, N=3000$}
-%   \begin{figure}[ht!]
-%      \includegraphics[width=\textwidth]{/home/james/research/mm_methods/accelerated_em/unwatched/n=40_K=40_N=3000_iter2.pdf}
-%   \end{figure}
-%\end{frame}
-%
-%\begin{frame}{Performance profiles: $d=40, K=40, N=3000$}
-%   \begin{figure}[ht!]
-%      \includegraphics[width=\textwidth]{/home/james/research/mm_methods/accelerated_em/unwatched/n=40_K=40_N=3000_time.pdf}
-%   \end{figure}
-%\end{frame}
-%
-%
-%\section{Gaussian Mixture Models}
-%\begin{frame}{Extend to GMMs?}
-%   \begin{itemize}
-%      \item We think we might be able to apply a Nesterov method to a full GMM.
-%      \item Implementation and analysis is harder.
-%      \item Performance might not be sufficiently better than EM.
-%   \end{itemize}
-%
-%   \[ \ell(\theta) = \sum_{n=1}^N \log\left(\sum_{k=1}^K \pi_k \mathcal{N}(\mathbf{x}_n|\mu_k, \Sigma_k)\right). \] 
-%\end{frame}
-%
-%
-%\section{Wavelet-based Image Deblurring}
-%\begin{frame}{Problem Statement}
-%   We're given a blurred image $\tilde{x}$ and know more-or-less how it was distorted (e.g. point spread function (PSF)).\\
-%
-%   We want to find the original image.
-%
-%   \[ \begin{array}{ll} \text{min}_x & \|RW^\dagger x - \tilde{x}\|_2^2 + \lambda \|x\|_1 \end{array}. \] 
-%
-%   \begin{itemize}
-%      \item $R$ - blurring operator; fast computation via FFT
-%      \item $W^\dagger$ - (multi-level) wavelet synthesis operator
-%      \item $x$ - wavelet coefficients (problem variable)
-%      \item $\lambda$ - regularization parameter
-%      \item $\|x\|_1$ - hopefully produces sparse coefficients $x$
-%   \end{itemize}
-%\end{frame}
-%
-%\begin{frame}{Adjoint Wavelet Operator}
-%   Split the objective function
-%   
-%   \[ \begin{array}{ll} \text{min}_x & f(x) + g(x)\end{array}, \quad f(x) = \|RW^\dagger x - \tilde{x}\|_2^2, \quad g(x) = \lambda \|x\|_1. \] 
-%
-%   To solve with a fast proximal gradient method, we need $\nabla f(x)$, but not $\nabla g(x)$:
-%
-%   \[ \nabla f(x) = 2 (W^\dagger)^\ast R^\ast\left(RW^\dagger x-\tilde{x}\right). \] 
-%   
-%   \noindent Need to compute $(W^\dagger)^\ast$ efficiently (e.g. $\mathcal{O}(N)$), but wavelet libraries only provide $W$ and $W^\dagger$.
-%   
-%   \begin{itemize}
-%      \item For orthogonal wavelets, $(W^\dagger)^\ast=W$.
-%      \item For biorthogonal wavelets, we have $(W^\dagger)^\ast$ up to boundary conditions.  Work in progress.
-%   \end{itemize}
-%\end{frame}
-%
-%\begin{frame}{Reformulation}
-%   A (possibly equivalent) problem is
-%
-%   \[ \begin{array}{ll} \text{min}_y & \|Ry - \tilde{x}\|_2^2 + \lambda \|Wy\|_1 \end{array}. \] 
-%
-%   $y$ is the synthesized image ($y=W^\dagger x$).\\
-%
-%   Using a fast proximal gradient method, we now need only $\nabla_y\|Ry-\tilde{x}\|_2^2$.  No longer need adjoint wavelet operator.\\[1em]
-%   
-%   References:
-%   \begin{itemize}
-%      \item Lieven Vandenberghe's ``Optimization methods for large-scale systems''
-%      \item A. Beck, M. Teboulle, \emph{A Fast Iterative Shrinkage-Thresholding Algorithm for Linear Inverse Problems}, SIAM Journal on Imaging Science, (2009).
-%   \end{itemize}
-%\end{frame}
+\begin{frame}{Proximal Gradient Method}
+   \[ f(x) = \dfrac{1}{2}\|\mathcal{A}x-b\|_2^2, \quad g(x) = \lambda \|x\|_1. \] 
 
-%\begin{frame}{References}
-%   \begin{itemize}
-%      \item Lieven Vandenberghe's ``Optimization methods for large-scale systems''
-%      \item A. Beck, M. Teboulle, \emph{A Fast Iterative Shrinkage-Thresholding Algorithm for Linear Inverse Problems}, SIAM Journal on Imaging Science, (2009).
-%   \end{itemize}
-%   ~\\
-%   Questions?
-%
-%\end{frame}
+   We can use a variant of simple gradient descent to solve the model problem
+
+   \[ \min_x f(x) + g(x). \] 
+
+   %XXX dropping k step notation for brevity.  x^+ is the new x after the prox grad step
+   Proximal gradient method:
+   \[ x^{+} = \operatorname{prox}_{t g}\left(x - t\nabla f(x)\right), \text{ step size $t>0$}. \] 
+   
+   Proximity function: 
+   \[ \operatorname{prox}_g(x) \defeq \argmin_u\left(g(u) + \dfrac{1}{2}\|u-x\|_2^2\right). \] 
+
+\end{frame}
+
+\begin{frame}{Proximal Gradient Method}
+   %\[ x^{(k)} = \operatorname{prox}_{t_k g}\left(x^{(k-1)} - t_k\nabla f(x^{(k-1)})\right). \] 
+   \[ \operatorname{prox}_g(x) \defeq \argmin_u\left(g(u) + \dfrac{1}{2}\|u-x\|_2^2\right). \] 
+
+   For $g(x) = \lambda\|x\|_1$, proximity operator is ``shrinkage'':
+
+   \[ \left\{\operatorname{prox}_g(x)\right\}_i = \left\{\begin{array}{ll} x_i-\lambda & x_i \ge \lambda\\0 & |x_i| < \lambda\\ x_i + \lambda & x_i\le -\lambda\end{array}\right.. \] 
+
+   %XXX dropping k step notation for brevity.  x^+ is the new x after the prox grad step
+   Proximal gradient step minimizes $g(u)$ plus quadratic local model of $f(u)$ about $x$:
+
+   \begin{align*}
+      x^+ &= \operatorname{prox}_{t g}\left(x - t\nabla f(x)\right)\\
+              %&= \argmin_u\left(g(u) + \dfrac{1}{2t}\left\|u-x+t\nabla f(x)\right\|_2^2\right)\\
+              &= \argmin_u\left(g(u) + f(x) + \left\langle \nabla f(x), u-x\right\rangle + \dfrac{1}{2t}\|u-x\|_2^2\right).
+   \end{align*}
+
+\end{frame}
 % ]]]
+
+
+% proximal gradient and FISTA side-by-side
+% [[[
+\begin{frame}{Proximal Gradient and FISTA}
+   Proximal gradient:\\
+   \begin{itemize}
+      \item Choose $x^{(0)}$.
+      \item For $k=1,2,...$\\[-1em]
+
+         \[ x^{(k)} = \operatorname{prox}_{t_k g}\left(x^{(k-1)} - t_k\nabla f(x^{(k-1)})\right), \text{ with step size $t_k$.} \] 
+   \end{itemize} 
+
+   FISTA (fast iterative shrinkage-thresholding algorithm):\\
+   \begin{itemize}
+      \item Choose $x^{(0)}=x^{(-1)}$.
+      \item For $k=1,2,...$\\[-1em]
+         \[ y = x^{(k-1)} + \dfrac{k-2}{k+1}\left(x^{(k-1)}-x^{(k-2)}\right) \] 
+         \[ x^{(k)} = \operatorname{prox}_{t_kg}\left(y - t_k\nabla f(y)\right), \text{ with step size $t_k$.} \] 
+   \end{itemize}
+
+\end{frame}
+% ]]]
+
+
+% analysis formulation
+% [[[
+\begin{frame}{Analysis formulation}
+   \begin{columns}
+      \begin{column}{0.5\textwidth}
+         Synthesis formulation\\[-1em]
+         \[ \min_x \dfrac{1}{2}\|\mathcal{RW}x-b\|_2^2 + \lambda \|x\|_1 \]
+
+         $x$ contains coefficients.\\
+      \end{column}
+
+      \begin{column}{0.5\textwidth}
+         Analysis formulation\\[-1em]
+         \[ \min_y \dfrac{1}{2}\|\mathcal{R}y-b\|_2^2 + \lambda \|\mathcal{W}^\dagger y\|_1 \] 
+
+         $y$ is an image.
+      \end{column}
+   \end{columns}
+   
+   ~\\
+   In the analysis formulation, we need $\operatorname{prox}_g(y)$ with $g(y) = \lambda\|\mathcal{W}^\dagger y\|_1$ instead of just $\lambda\|x\|_1$.\\[1em]
+
+   We know how to compute the prox function if $\mathcal{W}^\dagger(\mathcal{W}^\dagger)^\ast = \nu I$.  This is okay for orthogonal wavelets, but not for biorthogonal wavelets.  But it's ``close'' in practice.\\[1em]
+   
+   P. Combettes, J.-C. Pesquet, \emph{A Douglas-Rachford splitting approach to nonsmooth convex variational signal recovery}, IEEE Journal of Selected Topics in Signal Processing, (2007).
+\end{frame}
+% ]]]
+
+
+% original cameraman and recovered images side-by-side
+% [[[
+\begin{frame}{Image Deblurring Problem}
+   $200$ iterations of FISTA, $\mathcal{W}^\dagger$ is a 3-stage CDF 9/7 wavelet transform, ${\lambda = 2\times 10^{-5}}$
+   \begin{center}
+   \begin{columns}[t]
+      \begin{column}{0.45\textwidth}
+         Original image:
+         \includegraphics[width=\textwidth]{../ieee_spm/figures/{cameraman}.pdf}
+
+      \end{column}
+      
+      \begin{column}{0.45\textwidth}
+         Using $\mathcal{W}^\ast = \tilde{\mathcal{W}}_\text{zpd}^\dagger(\mathcal{E}^\dagger)^\ast$:
+         \includegraphics[width=\textwidth]{../ieee_spm/figures/{cameraman_rec_200_bior4.4_sym_trim}.pdf}
+         \[ \scalemath{0.75}{\dfrac{\|\mathcal{W}x-y\|_2}{\|y\|_2} = 7.24\times 10^{-2}} \] 
+      \end{column}
+   \end{columns}
+   \end{center}
+
+\end{frame}
+
+% ]]]
+
+
+% some extra BCE recoveries (more-or-less cherry picked!)
+% [[[
+\begin{frame}{Example estimation}
+   Still a work in progress!\\
+   \begin{center}
+      \includegraphics[width=\textwidth]{figures/bce_rec_03_h_trim.pdf}
+   \end{center}
+\end{frame}
+
+\begin{frame}{Example estimation}
+   Still a work in progress!\\
+   \begin{center}
+      \includegraphics[width=\textwidth]{figures/bce_rec_03_s_trim.pdf}
+   \end{center}
+\end{frame}
+% ]]]
+
 
 \end{document}
 
