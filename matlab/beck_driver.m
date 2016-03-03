@@ -17,18 +17,20 @@ Bobs=B + 1e-3*randn(size(B));
 
 % show original and observed blurred image
 %figure(1)
-%subplot(1,2,1)
-%imshow(X,[])
-%title('Original')
-%subplot(1,2,2)
+%%subplot(1,2,1)
+%%imshow(X,[])
+%%title('Original')
+%%subplot(1,2,2)
+%%imshow(Bobs,[])
+%%title('Blur+Noise')
 %imshow(Bobs,[])
-%title('Blur+Noise')
+%error('stop here')
 
 % FISTA parameters
 %lambda = 1e-4; % used in B+T's example code
 lambda = 2e-5; % used in FISTA SIAM paper
 
-pars.MAXITER=100; % do this many iterations
+pars.MAXITER=200; % do this many iterations
 pars.fig=0; % suppress the figure while running FISTA
 %pars.BC='periodic';
 pars.B = 1; % TODO JMF need to look this up for CDF 9/7 wavelets
@@ -41,12 +43,14 @@ extmode = 'sym'
 
 levels = 3;
 
-wname  = 'db1'
-dwname = 'db1';
+%wname  = 'db1'
+%dwname = 'db1';
 %wname  = 'db5'  % filter length 9
 %dwname = 'db5'; 
-%wname  = 'bior4.4' % filter lengths 9 and 7
-%dwname = 'rbio4.4'; 
+wname  = 'bior4.4' % filter lengths 9 and 7
+dwname = 'rbio4.4'; 
+%wname  = 'bior2.2' % filter lengths 5 and 3
+%dwname = 'rbio2.2';
 
 L = build_wavedec_levels_2d(size(Bobs), levels, wname, extmode);
 
@@ -66,7 +70,7 @@ subplot(1,2,2)
 imshow(Xout,[])
 title('Recovered')
 
-fprintf(1, 'recovery l2-error (rel) = %e\n', norm(Xout-Bobs,'fro')/norm(Bobs,'fro'));
+fprintf(1, 'recovery l2-error (rel) = %e\n', norm(Xout-X,'fro')/norm(X,'fro'));
 fprintf(1, 'recovery nnz (%%nnz) = %d (%3.2f)\n', sum(abs(X_iter(:))>0),sum(abs(X_iter(:))>0)/numel(X_iter)*100);
 %fprintf(1, 'recovery %%(big coeffs) = %3.2f\n', sum(abs(X_iter(:)) > 1e-4)/numel(X_iter)*100);
 
@@ -146,7 +150,8 @@ function [X] = wavelet_synthesis_adjoint_2d(Y, wname, dwname, extmode, levels)
    lf = length(Lo_D);
   
    dwtmode('zpd', 'nodisp'); % wavedec2 doesn't take the 'mode' arg like (i)dwt2
-   %Ye = wextend('2D', extmode, Y, lf-1, 'b'); % temp: this is "close" to adjoint of pinv
+   %Ye = wextend('2D', extmode, Y, lf-1, 'b'); % test: this is "close" to adjoint of pinv
+   %[X,L] = wavedec2(Ye, levels, wname);       % test: this is "close" to adjoint of W
    Ye = extension_pinv_adjoint_2d(Y, lY, lf-1, extmode);
    [X,L] = wavedec2(Ye, levels, dwname);
 

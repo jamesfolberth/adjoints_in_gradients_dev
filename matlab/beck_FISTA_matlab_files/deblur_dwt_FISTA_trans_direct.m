@@ -127,7 +127,7 @@ for i=1:MAXITER
    X_old=X_iter;
    t_old=t_new;
    
-    %% Gradient step
+    %% Gradient step for the ANALYSIS problem
     %D=Sbig.*trans(Y)-Btrans;
     %Y=Y-2/L*itrans(conj(Sbig).*D);
     %Y=real(Y);
@@ -140,7 +140,7 @@ for i=1:MAXITER
     %% The new iterate inverse wavelet transform of WY
     %X_iter=WT(WY,S_book_keeping);
 
-    % Gradient step
+    % Gradient step for the SYNTHESIS problem
     WY = WSy(Y,S_book_keeping);
     D=Sbig.*trans(WY)-Btrans;
     Y=Y-2/L*WSyAd(real(itrans(conj(Sbig).*D)), S_book_keeping);

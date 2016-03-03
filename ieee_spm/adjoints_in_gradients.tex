@@ -159,7 +159,8 @@ There is hope, however!  For orthogonal wavelets (e.g. Haar and more generally D
 
 \noindent Beck and Teboulle did exactly this with a three-stage discrete Haar wavelet transform \cite{beck_2009}.  For an example image, consider the cameraman image, shown in Figure \ref{fig:cameraman_original}.  We prescribe symmetric boundary conditions on the image, which will affect both $\mathcal{W}$, $\mathcal{R}$, and their adjoints.  Symmetric boundary conditions (compared to periodic or zero-padded boundary conditions) produce significantly less edge effects, and so are a natural choice.  Luckily, for orthogonal wavelets, the adjoint of $\mathcal{W}$ with symmetric boundary conditions is identically the inverse $\mathcal{W}^\dagger=\mathcal{W}^{-1}$ with symmetric boundary conditions, so one can use existing wavelet libraries without hassle, e.g. \cite{matlab_wt_2015}.\\
 %TODO do existing wavelet libraries actually do the extension pinv adjoint correctly?
-%     The extension operator is "close" to the extension pinv adjoint, so it's approx correct.
+%     No, but the extension operator is "close" to the extension pinv adjoint, so it's approx correct.
+%     For zero-padding, the extension pinv is identically the adjoint.
 
 \begin{figure}
    \centering
@@ -307,15 +308,16 @@ Recently Ahmed et al. \cite{ahmed_2013} published a paper considering blind deco
     \vdots & \vdots & \vdots & \vdots\\
    };
 
-   \begin{scope}[xshift=-35mm,yshift=-3.5mm]
-   \matrix (y) [matrix of math nodes, nodes = {node style ge},, column sep=0mm, row sep=-2mm]
-   {y[0]\\
-    y[1]\\
-    y[2]\\
-    y[3]\\
-    y[4]\\
-    y[5]\\
-    y[6]\\[-2mm]
+   \begin{scope}[xshift=-35mm,yshift=-2.5mm]
+   %TODO need to hack these offsets and spacits correctly
+   \matrix (y) [matrix of math nodes, nodes = {node style ge},, column sep=0mm, row sep=-3mm]
+   {x_i[0]\\
+    x_i[1]\\
+    x_i[2]\\
+    x_i[3]\\
+    x_i[4]\\
+    x_i[5]\\
+    x_i[6]\\[-2mm]
     \vdots\\
    };
    \end{scope}
