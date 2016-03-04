@@ -273,46 +273,25 @@
 \end{frame}
 
 \begin{frame}{Adjoint of Wavelet Operator}
-   We could use $\mathcal{W}^\ast \approx \mathcal{W}^\dagger$, but it turns out we can find the adjoint exactly!\\
-   
-   \begin{itemize}
-      \item Related to $\mathcal{W}$ are frame vectors $\phi_n$ (the wavelet basis vectors), which define a frame operator $\Phi=\mathcal{W}^\dagger$:
+   Digging around in frame theory a bit, it turns out ${\color{blue} \mathcal{W}^\ast = \tilde{\mathcal{W}}^\dagger}$: {\color{blue}the adjoint of wavelet synthesis is dual wavelet analysis}.\\[1em]
 
-         \[ \Phi f[n] = \langle f, \phi_n\rangle. \] 
-      \item We can define the dual frame vectors $\tilde{\phi}_n=\left(\Phi^\ast\Phi\right)^{-1}\phi_n$.
-      \item Define the dual frame operator via
+   But we must also handle boundary conditions.  This is usually done by extending the signal via $\mathcal{E}$ to satisfy the BCs.\\[1em]
 
-         \[ \tilde{\Phi}f[n] = \langle f, \tilde{\phi}_n\rangle. \] 
+   The relation $\mathcal{W}^\ast = \tilde{\mathcal{W}}^\dagger$ holds for $\mathcal{E}$ being zero-padding, since $\mathcal{E}_\text{zpd}^\ast = \mathcal{E}_\text{zpd}^\dagger$.  Let $\mathcal{W}_\text{zpd}$ be wavelet synthesis with zero BCs.\\[1em]
 
-      \item Digging around in frame theory a bit, we find
+   For general $\mathcal{E}$, we have\\[-1em]
 
-         \[ \Phi^\ast = \tilde{\Phi}^\dagger \implies {\color{blue}\mathcal{W}^\ast = \tilde{\mathcal{W}}^\dagger}\] 
-   \end{itemize}
+   \[ \mathcal{W}^\dagger = \mathcal{W}_\text{zpd}^\dagger\mathcal{E} \implies \mathcal{W}=\mathcal{E}^\dagger\mathcal{W}_\text{zpd} \implies \mathcal{W}^\ast = \mathcal{W}_\text{zpd}^\ast(\mathcal{E}^\dagger)^\ast \]
 
-\end{frame}
+   and\\[-1em]
 
-\begin{frame}{Adjoint of Wavelet Operator}
-   So we have $\mathcal{W}^\ast = \tilde{\mathcal{W}}^\dagger$: the adjoint of wavelet synthesis is dual wavelet analysis.\\
-
-   But we must also handle boundary conditions.\\
-
-   This is usually done by extending the signal via $\mathcal{E}$ to satisfy the BCs.\\
-
-   The relation $\mathcal{W}^\ast = \tilde{\mathcal{W}}^\dagger$ holds for $\mathcal{E}$ being zero-padding, since $\mathcal{E}_\text{zpd}^\ast = \mathcal{E}_\text{zpd}^\dagger$.  Let $\mathcal{W}_\text{zpd}$ be wavelet synthesis with zero BCs.\\
-
-   In general, we have
-
-   \[ \mathcal{W}^\dagger = \mathcal{W}_\text{zpd}^\dagger\mathcal{E} \implies \mathcal{W}=\mathcal{E}^\dagger\mathcal{W}_\text{zpd} \implies \mathcal{W}^\ast = \mathcal{W}_\text{zpd}^\ast\left(\mathcal{E}^\dagger\right)^\ast \]
-
-   and
-
-   \[ {\color{blue} \mathcal{W}^\ast = \tilde{\mathcal{W}}_\text{zpd}^\dagger \left(\mathcal{E}^\dagger\right)^\ast}. \] 
+   \[ {\color{blue} \mathcal{W}^\ast = \tilde{\mathcal{W}}_\text{zpd}^\dagger (\mathcal{E}^\dagger)^\ast}. \] 
 
 
 \end{frame}
 
 \begin{frame}{Adjoint of Pseudoinverse Extension}
-   Due to factorization $\mathcal{W}^\ast = \tilde{\mathcal{W}}_\text{zpd}^\dagger(\mathcal{E}^\dagger)^\ast$, we just need to implement $(\mathcal{E}^\dagger)^\ast$!  $\tilde{\mathcal{W}}_\text{zpd}^\dagger$ is a standard and fast operation.\\[.5em]
+   Now we just need to implement $(\mathcal{E}^\dagger)^\ast$!  $\tilde{\mathcal{W}}_\text{zpd}^\dagger$ is a standard and fast operation.\\[.5em]
 
    Consider a signal $y[n]$, $n=0,...,N-1$.  Let $L_p$ be the length of wavelet analysis filters.\\[.5em]
 
@@ -354,17 +333,6 @@
 \end{frame}
 
 \begin{frame}{Image Deblurring Problem}
-   \begin{itemize}
-      \item $\mathcal{W}^\ast = \tilde{\mathcal{W}}_\text{zpd}^\dagger(\mathcal{E}^\dagger)^\ast$.
-      \item $\tilde{\mathcal{W}}^\dagger$ is part of wavelet libraries and is fast.
-      \item $(\mathcal{E}^\dagger)^\ast$ is closed-form (once you find it) and fast.
-      \item So we can apply $\mathcal{W}^\ast$ efficiently \emph{and correctly} in
-
-         \[ \nabla f(x) = \mathcal{W}^\ast\mathcal{R}^\ast\left(\mathcal{RW}x-b\right). \] 
-   \end{itemize}
-\end{frame}
-
-\begin{frame}{Image Deblurring Problem}
    $200$ iterations of FISTA, $\mathcal{W}^\dagger$ is a 3-stage CDF 9/7 wavelet transform, ${\lambda = 2\times 10^{-5}}$
    \begin{center}
    \begin{columns}[t]
@@ -385,6 +353,17 @@
 
 \end{frame}
 
+\begin{frame}{Image Deblurring Problem}
+   \begin{itemize}
+      \item $\mathcal{W}^\ast = \tilde{\mathcal{W}}_\text{zpd}^\dagger(\mathcal{E}^\dagger)^\ast$.
+      \item $\tilde{\mathcal{W}}_\text{zpd}^\dagger$ is standard in wavelet libraries.
+      \item $(\mathcal{E}^\dagger)^\ast$ is closed-form (once you find it) and fast.
+      \item So we can apply $\mathcal{W}^\ast$ efficiently \emph{and correctly} in
+
+         \[ \nabla f(x) = \mathcal{W}^\ast\mathcal{R}^\ast\left(\mathcal{RW}x-b\right). \] 
+   \end{itemize}
+\end{frame}
+
 % ]]]
 
 
@@ -392,7 +371,7 @@
 % [[[
 \begin{frame}{BCE Problem}
    %TODO could change output signals to y_i and y?  Doesn't match BCE literature, but works better with above
-   Unknown source $s$ sends signal over unknown channels with impulse responses $h_i$.  We observe channel outputs
+   Unknown source sends signal $s$ over unknown channels with impulse responses $h_i$.  We observe channel outputs
 
    \[ x_i[n] = \{h_i\ast s\}[n]. \] 
    
@@ -648,6 +627,29 @@
       \item For $k=1,2,...$\\[-1em]
          \[ y = x^{(k-1)} + \dfrac{k-2}{k+1}\left(x^{(k-1)}-x^{(k-2)}\right) \] 
          \[ x^{(k)} = \operatorname{prox}_{t_kg}\left(y - t_k\nabla f(y)\right), \text{ with step size $t_k$.} \] 
+   \end{itemize}
+
+\end{frame}
+% ]]]
+
+
+% Some frame theory
+% [[[
+\begin{frame}{Adjoint of Wavelet Operator}
+   We could use $\mathcal{W}^\ast \approx \mathcal{W}^\dagger$, but it turns out we can find the adjoint exactly!\\
+   
+   \begin{itemize}
+      \item Related to $\mathcal{W}$ are frame vectors $\phi_n$ (the wavelet basis vectors), which define a frame operator $\Phi=\mathcal{W}^\dagger$:
+
+         \[ \Phi f[n] = \langle f, \phi_n\rangle. \] 
+      \item We can define the dual frame vectors $\tilde{\phi}_n=\left(\Phi^\ast\Phi\right)^{-1}\phi_n$.
+      \item Define the dual frame operator via
+
+         \[ \tilde{\Phi}f[n] = \langle f, \tilde{\phi}_n\rangle. \] 
+
+      \item Digging around in frame theory a bit, we find
+
+         \[ \Phi^\ast = \tilde{\Phi}^\dagger \implies {\color{blue}\mathcal{W}^\ast = \tilde{\mathcal{W}}^\dagger}\] 
    \end{itemize}
 
 \end{frame}
