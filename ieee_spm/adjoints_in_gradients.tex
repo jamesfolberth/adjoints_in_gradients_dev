@@ -21,6 +21,7 @@
 
 \newcommand{\opn}[1]{\operatorname{#1}}
 \newcommand{\reals}{\mathbb{R}}
+\newcommand{\defeq}{\mathrel{\mathop:}=}
 
 %TODO should this be a ``lecture note'' or a ``tips and tricks''?
 
@@ -48,17 +49,19 @@ The reader should be familiar with linear algebra, wavelets, and basic Fourier a
 
 
 %TODO Not sure what to call this section
-%TODO How do we cite Vandenberghe's course notes?
-\section{A Model Optimization Problem}
+%TODO How do we cite Vandenberghe's course notes? http://www.seas.ucla.edu/~vandenbe/ee236c.html
+\section{A Generic Optimization Problem}
 % [[[
-In this lecture note we consider as examples a few variants of the standard optimization problem
+In this lecture note we consider as examples a few variants of the optimization problem
 
 \begin{equation}
 \label{eq:model_problem}
-\min_x \frac{1}{2}\|\mathcal{A}x-b\|_2^2 + \lambda \|x\|_1,
+\min_x ~\frac{1}{2}\|\mathcal{A}x-b\|_2^2 + \lambda \|x\|_1,
 \end{equation}
 
-\noindent where $\mathcal{A}$ is a linear operator, $\|\cdot\|_2$ is the $\ell_2$ norm, and $\|\cdot\|_1$ is the $\ell_1$ norm. Let $g(x) = \frac{1}{2}\|\mathcal{A}x-b\|_2^2$ and $h(x)=\lambda \|x\|_1$.  Notice that $g(x)$ is convex and differentiable, and $h(x)$ is convex but non-differentiable.  The scalarization parameter $\lambda$ controls the relative importance of the approximation error $g(x)$ and the sparsity heuristic $\|x\|_1$.  Loosely speaking, larger $\lambda$ should yield a sparser solution.\\
+\noindent where $\mathcal{A}$ is a linear operator, $\|\cdot\|_2$ is the $\ell_2$ norm, and $\|\cdot\|_1$ is the $\ell_1$ norm.  Loosely speaking, we pose this problem to attempt to find an $x$ such that $\mathcal{A}x$ is close to $b$, but also such that $x$ is sparse.  This problem usually comes up when we try to discover an unknown signal $x$ from an observed signal $b$, subject to some structural information about the unknown signal $x$ (sparsity, in this case).\\
+
+\noindent Let $g(x) = \frac{1}{2}\|\mathcal{A}x-b\|_2^2$ and $h(x)=\lambda \|x\|_1$.  Notice that $g(x)$ is convex and differentiable, and $h(x)$ is convex but non-differentiable.  The scalarization parameter $\lambda$ controls the relative importance of the approximation error $g(x)$ and the sparsity heuristic $\|x\|_1$.  Loosely speaking, larger $\lambda$ should yield a sparser solution.\\
 
 Even though $h(x)$ is non-differentiable, there exist many efficient algorithms for solving the above problem and its variants.  Popular methods include the proximal gradient method and its variants, which include iterative shrinkage thresholding and projected gradient.  Crucial to the speed of these methods is an efficient proximal mapping (prox-operator) for the non-differentiable term $h(x)$.  The proximal mapping is defined as
 
@@ -139,7 +142,7 @@ Let $\mathcal{W}$ represent a multi-level wavelet synthesis operator with suitab
 
 \begin{equation}
 \label{eq:syn_problem}
-\min_x \dfrac{1}{2}\|\mathcal{RW}x-b\|_2^2 + \lambda \|x\|_1,
+\min_x~ \dfrac{1}{2}\|\mathcal{RW}x-b\|_2^2 + \lambda \|x\|_1,
 \end{equation}
 
 \noindent From the sparse wavelet coefficients in an optimal solution $\hat{x}$, we can synthesize the deblurred image via $\mathcal{W}\hat{x}$.  This formulation is sometimes called the \emph{synthesis} formulation, since we synthesize an image from the wavelet coefficients in the optimization variable $x$.\\
@@ -261,7 +264,7 @@ Figure \ref{fig:cameraman_200_bior4.4_sym} shows the deblurred cameraman image a
 %
 %\begin{equation}
 %\label{eq:ana_form}
-%\min_y \|\mathcal{R}y-b\|_2^2 + \lambda \|\mathcal{W}^\dagger y\|_1.
+%\min_y~ \|\mathcal{R}y-b\|_2^2 + \lambda \|\mathcal{W}^\dagger y\|_1.
 %\end{equation}
 %
 %\noindent We use $\mathcal{W}^\dagger$ to denote the Moore-Penrose pseudoinverse of $\mathcal{W}$; this is the standard operation of wavelet analysis.  In the analysis form, the optimization variable $y$ is an image.  An optimal solution $y^\ast$ should be a good approximation of the original, sharp image.\\
@@ -281,13 +284,19 @@ Another application where an interesting adjoint is involved in the gradient com
 
 \[ x_i = h_i\ast s, \] 
 
-\noindent and will be of length $K+N-1$.  In this form, we must solve a multitude of nonlinear equations in the components of $s$ and each $h_i$.  Also note that there is both a magnitude and phase ambiguity in $h_i$ and $s$, since we can multiply $h_i$ by $\alpha\neq 0$ and divide $s$ by $\alpha$, leaving $x_i$ unchanged.\\
+\noindent and will be of length $K+N-1$.  We hope to recover the source $s$ and channel responses $h_i$ from the output signals $x_i$.   However, note that there is both a magnitude and phase ambiguity in $h_i$ and $s$, since we can multiply $h_i$ by $\alpha\neq 0$ and divide $s$ by $\alpha$, leaving $x_i$ unchanged.\\
 
 Recently Ahmed et al. \cite{ahmed_2013} published a paper considering blind deconvolution via convex optimization.  Crucial to their method is the following observation.  The convolution $h_i\ast s$ can be formed as a linear operation on the elements of the rank-1 matrix $h_is^T$:
 
 \[ h_i\ast s = \mathcal{A}(h_is^T). \] 
 
-\noindent The operation $x_i=\mathcal{A}$ acts on the $K\times N$ matrix $h_is^T$ by summing each antidiagonal, producing an element of $x_i$.  This action is illustrated in Figure \ref{fig:action_of_A}.\\
+\noindent The operation $x_i=\mathcal{A}(h_is^T)$ acts on the $K\times N$ matrix $h_is^T$ by summing each antidiagonal, producing an element of $x_i$.  This action is illustrated in Figure \ref{fig:action_of_A}.\\
+
+For simplicity, let's assume we have a single channel $h$ with observed output $x$.  Using the convolution operator $\mathcal{A}$, we can pose the recovery problem as
+
+\[ \min_{h,s}~ \|x - \mathcal{A}(hs^T)\|_2^2 + \lambda_h\|h\|_1 + \lambda_s \|s\|_1, \] 
+
+\noindent where we include the terms $\lambda_h\|h\|_1$ and $\lambda_s\|s\|_1$ to promote sparsity in the recovered signals.  To promote other structure in the recovered signals (assuming it is present in the true signals), we can in principle include other terms, such as $\lambda_h\|h\|_{TV}$, the total-variation norm.  Note that since this problem involves quadratic terms in $hs^T$, it is a non-convex problem.\\
 
 \begin{figure}
 \begin{tikzpicture}[baseline=(hs.center)]
@@ -357,17 +366,101 @@ The operator $\mathcal{A}$ is a little bit strange in that it maps matrices to v
 
 \[ \left\langle\mathcal{A}(X),y\right\rangle = \sum_{k=0}^{K-1}\sum_{n=0}^{N-1} X[k,n]y[k+n] = \left\langle X,\mathcal{A}^\ast(y)\right\rangle. \] 
 
-\noindent Define the $K\times N$ Hankel matrix by $Y[k,n] = y[k+n]$, and then we have the adjoint $\mathcal{A}^\ast(y) = Y$!
+\noindent Define the $K\times N$ Hankel matrix by $Y[k,n] = y[k+n]$, and then we have the adjoint $\mathcal{A}^\ast(y) = Y$!\\
+
+It turns out that we can compute matrix-vector products with the Hankel matrix $Y$ rapidly, even though $Y$ is dense \cite{golub_1996}.  To illustrate the manner in which we can compute a fast Hankel matrix-vector product, consider the (unrealistic) case $K=3$ and $N=5$.  The Hankel matrix $Y$ is
+
+   \[ Y = \begin{bmatrix} y[0] & y[1] & y[2] & y[3] & y[4]\\
+                          y[1] & y[2] & y[3] & y[4] & y[5]\\
+                          y[2] & y[3] & y[4] & y[5] & y[6]\\\end{bmatrix}. \] 
+
+\noindent Note that we only store the first column and last row of $Y$.  We can reverse the order of the columns of $Y$, resulting in the Toeplitz matrix
+
+\[ T = YP = \begin{bmatrix}
+       y[4] & y[3] & y[2] & y[1] & y[0]\\
+       y[5] & y[4] & y[3] & y[2] & y[1]\\
+       y[6] & y[5] & y[4] & y[3] & y[2]\\\end{bmatrix}, \] 
+
+\noindent where
+
+\[               \quad P = \begin{bmatrix} 0 & 0 & 0 & 0 & 1\\
+                                        0 & 0 & 0 & 1 & 0\\
+                                        0 & 0 & 1 & 0 & 0\\
+                                        0 & 1 & 0 & 0 & 0\\
+                                        1 & 0 & 0 & 0 & 0\\ \end{bmatrix}. \] 
+
+\noindent Similarly, we only need to store the first column and row of $T$.  We can then embed the Toeplitz matrix in a circulant matrix
+
+   % http://tex.stackexchange.com/questions/33519/vertical-line-in-matrix-using-latexit
+   \[ C = \left[\begin{array}{@{}ccccc|cc@{}}
+                y[4] & y[3] & y[2] & y[1] & y[0] & y[6] & y[5]\\
+                y[5] & y[4] & y[3] & y[2] & y[1] & y[0] & y[6]\\
+                y[6] & y[5] & y[4] & y[3] & y[2] & y[1] & y[0]\\
+                \hline
+                y[0] & y[6] & y[5] & y[4] & y[3] & y[2] & y[1]\\
+                y[1] & y[0] & y[6] & y[5] & y[4] & y[3] & y[2]\\
+                y[2] & y[1] & y[0] & y[6] & y[5] & y[4] & y[3]\\
+                y[3] & y[2] & y[1] & y[0] & y[6] & y[5] & y[4]\\
+                \end{array}\right], \] 
+
+\noindent where we store only the first column of $C$.  Recall that matrix-vector multiplication with a circulant vector is circular convolution with the first column of $C$ (moreover, circulant matrices are diagonalized by the discrete Fourier transform $\mathcal{F}$).  Therefore, we can compute fast circulant matrix-vector products via the FFT by performing element-wise multiplication in the frequency domain.\\
+
+To make all of this work for a Hankel matrix-vector product, say $w=Yz$, where $z$ has length $N$, we must keep track of all the intermediate changes to $Y$.  Let $z_r = Pz$ be the reversed order of $z$.  Then ${w=Yz=YPPz=Tz_r}$.  Let $z_a$ be $z_r$ with $K-1$ additional zeros at the end:
+
+\[ z[N-1], ..., z[0], \underbrace{0, ..., 0}_{K-1}. \]
+
+\noindent This is the corresponding change to embedding $T$ in the circulant matrix $C$.  We then compute the circulant matrix-vector product $Cz_a$ in the frequency domain.  Let $c$ be the first column of $C$.  Then
+
+\[ Cz_a = \mathcal{F}^{-1}\left[\left(\mathcal{F}c\right).*\left(\mathcal{F}z_a\right)\right], \] 
+
+\noindent where $\mathcal{F}$ is the DFT of length $K+N-1$ (computed with an FFT) and $.*$ is the element-wise, or Hadamard, product.  Finally, the $K-1$ elements of $w$ are in the first $K-1$ entries of $Cz_a$.\\
+
+% TODO What example of this should we do?
+%      We can use Brendan's simulated data and just publish the data on github?  Get permission first!  This example is still a work in progress however!  Choice of parameters is important.
+%      \cite some of Brendan's papers?
+Now that we can compute the action of $\mathcal{A}^\ast(y)$, we can compute gradients and use existing first-order methods.  As an example, we consider a simulated underwater acoustic channel.  A single unknown real source signal is broadcast over two acoustic channels with unknown real impulse responses.  Additionally, zero mean Gaussian noise with standard deviation $0.005$ is added to each output signal.  We extend the blind channel estimation problem to two channels quite naturally:
+
+\begin{align*}
+   \min_{h_i,s} ~&\|y_1 - \mathcal{A}(h_1s^T)\|_2^2 + \lambda_{h}\|h_1\|_1 + \lambda_s\|s\|_1\\
+                 &\|y_2 - \mathcal{A}(h_2s^T)\|_2^2 + \lambda_{h}\|h_2\|_1.
+\end{align*}
+
+\noindent Further, we may add a differentiable total-variation-like term.  The addition of a total-variation-like term may induce sharp transitions and stretches of nearly constant signal values (e.g. where the channel impulse response is zero for brief periods).  The true total-variation (TV) norm of $h$ may be computed as $\|\mathcal{D}h\|_1$, where $\mathcal{D}$ is the operator that subtracts consecutive pairs of elements of $h$: $\{\mathcal{D}h\}_j = h_{j+1} - h_j$.  We can in fact form $\mathcal{D}$ as a sparse matrix and compute $\mathcal{D}^\ast$ easily.  To ``soften'' the TV norm to a differentiable term, we may use the Huber function, defined as
+
+\[ L_\delta(z) = \left\{\begin{array}{ll} \frac{1}{2}z^2 & |z| \le \delta\\ \delta\left(|z| - \frac{1}{2}\delta\right) & |z| > \delta. \end{array}\right. \] 
+
+\noindent The Huber function is commonly used in regression with outliers, as it is linear for $|z|>\delta$, and so it is less sensitive to outliers.  Unlike $\|\cdot\|_1$, the Huber function is differentiable for all $z$.  We can approximate the TV norm with ${\|h\|_\text{TV} \defeq\|\mathcal{D}h\|_1 \approx L_\delta(\mathcal{D}h)/\delta}$.  The augmented problem, with the differentiable total-variation-like term is
+
+\begin{align*}
+   \min_{h_i,s} ~&\|y_1 - \mathcal{A}(h_1s^T)\|_2^2 + \lambda_{h}\|h_1\|_1 + \lambda_{h,\text{TV}}L_\delta(\mathcal{D}h_1)/\delta + \lambda_s\|s\|_1\\
+                 &\|y_2 - \mathcal{A}(h_2s^T)\|_2^2 + \lambda_{h}\|h_2\|_1 + \lambda_{h,\text{TV}}L_\delta(\mathcal{D}h_2)/\delta.
+\end{align*}
+
+%TODO finish presenting example
+
+\begin{figure}
+   \centering
+   \includegraphics[width=0.5\textwidth]{figures/bce_rec_003_x_trim.pdf}
+   \includegraphics[width=0.5\textwidth]{figures/bce_rec_003_h_trim.pdf}
+   \includegraphics[width=0.5\textwidth]{figures/bce_rec_003_s_trim.pdf}
+   \caption{Caption}
+   \label{fig:bce_rec}
+\end{figure}
+
+
 
 % ]]]
 
+\section{Discussion}
+% [[[
+
+
+
+% ]]]
 
 % References
-%TODO make a separate .bib
-% copied from ../notes/adjoint_wavelet_notes.bbl
-% [[[
-\input{../notes/adjoint_wavelet_notes.bbl}
-% ]]]
+\bibliographystyle{IEEEtran}
+\bibliography{adjoints_in_gradients.bib}
 
 % if you will not have a photo at all:
 \begin{IEEEbiographynophoto}{James Folberth}

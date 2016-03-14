@@ -12,6 +12,8 @@ notes/figures/*_trim.pdf
 ieee_spm/adjoints_in_gradients.aux
 ieee_spm/adjoints_in_gradients.log
 ieee_spm/adjoints_in_gradients.pdf
+ieee_spm/adjoints_in_gradients.bbl
+ieee_spm/adjoints_in_gradients.blg
 ieee_spm/ieee_spm_jan_2016_lecture_note_polyphase_channelizer_demystified.pdf
 ieee_spm/ieee_spm_nov_2015_lecture_note_relationship_between_least_mean_square_and_kalman_filters.pdf
 ieee_spm/ieee_spm_sep_2015_lecture_note_projection_based_wavelet_denoising.pdf
