@@ -85,53 +85,6 @@ The gradient of the differentiable term $g(x)$ is found to be
 
 % ]]]
 
-%\section{An Image Deblurring Problem}
-%% [[[
-%Digital images can be blurred through a variety of means.  For example, the optical system can be out of focus and atmospheric turbulence can cause blurring of astronomical images.  The goal of image deblurring is to recover the original, sharp image by posing the blurring process in a mathematical model.\\
-%
-%In this lecture note, we use the formulation used in \cite{beck_2009}.  It is assumed that the blurring action is known, and the deblurring problem is posed as an optimization problem, where the optimization variables are the wavelet coefficients of the recovered image.  Let $\mathcal{R}$ be a known blurring operator.  For instance, $\mathcal{R}$ could represent a Gaussian point spread function (PSF) under symmetric (also called reflexive) boundary conditions \cite{hansen_2006}.  Again, this model assumes that we know the type of blurring that occurred, which resulted in the observed blurred image.\\
-%
-%Let $\mathcal{W}$ represent a multi-level wavelet synthesis operator with suitable boundary conditions.  Let $b$ be the observed, blurry image.  The image deblurring task can now be posed as the following optimization problem over $x$, a vector of wavelet coefficients:
-%
-%\begin{equation}
-%\label{eq:syn_problem}
-%\min_x \|\mathcal{RW}x-b\|_2^2 + \lambda \|x\|_1,
-%\end{equation}
-%
-%\noindent where $\|\cdot\|_2$ represents the standard $\ell_2$-norm, and $\|\cdot\|_1$ is the $\ell_1$-norm.  It is the hope that an optimal set of wavelet coefficients $x^\ast$ will be such that the image $\mathcal{W}x^\ast$ is approximates the original, sharp image.  By applying $\mathcal{R}$ to $\mathcal{W}x^\ast$, we are blurring the recovered image to approximate the observed, blurry image $b$.\\
-%
-%%In (\ref{eq:syn_problem}), $\lambda$ is a scalarization parameter that adjusts the relative importance of the accuracy term $\|\mathcal{RW}x-b\|_2^2$ over the sparsity term $\|x\|_1$.  To favor sparsity in the wavelet domain, one should increase $\lambda$.\\
-%
-%A few popular methods of finding approximate solutions to (\ref{eq:syn_problem}) include FISTA \cite{beck_2009} and NESTA \cite{becker_2011}.  FISTA is a fast proximal gradient method which separates the objective of (\ref{eq:syn_problem}) into two pieces: $f(x)=\|\mathcal{RW}x-b\|_2^2$, which is smooth, and $g(x) = \lambda\|x\|_1$ which is non-smooth, but has an efficiently computable proximal function.  To apply a fast proximal gradient method like FISTA, we need only the gradient $\nabla f(x)$ and the proximal function of $g(x)$, which in this case is the soft-threshold, or shrinkage, operation.  We refer the reader to \cite{beck_2009} and the references therein for an explanation of (fast) proximal gradient methods.\\
-%
-%For the problem (\ref{eq:syn_problem}), we have
-%
-%\begin{equation}
-%\label{eq:f_grad}
-%\nabla f(x) = 2\mathcal{W}^\ast\mathcal{R}^\ast(\mathcal{RW}x-b).
-%\end{equation}
-%
-%\noindent We use the notation $\mathcal{W}^\ast$ to denote the adjoint of $\mathcal{W}$.  Note that FISTA typically requires many evaluations of $\nabla f(x)$, and that the dominant cost is the application of $\mathcal{W}^\ast,~\mathcal{R}^\ast,~\mathcal{R},$ and $\mathcal{W}$.  Thus, the need for efficiently applying these operators is apparent.\\
-%
-%In the case of a PSF, we can apply $\mathcal{R}$ and $\mathcal{R}^\ast$ efficiently in the Fourier domain via the FFT \cite{beck_2009, hansen_2006}.  Wavelet software packages (e.g. \cite{matlab_wt_2015}) implement fast discrete wavelet analysis and synthesis.  The purpose of this lecture note is to show a fast method of applying $\mathcal{W}^\ast$, thus resulting in a fast evaluation of $\nabla f(x)$.\\
-%
-%
-%\subsection{Analysis Formulation}
-%We note here that there is an alternative formulation of the image deblurring problem.  The formulation (\ref{eq:syn_problem}), where $x$ is a vector of wavelet coefficients, is called the synthesis form.  We can also consider the problem in analysis form:
-%
-%\begin{equation}
-%\label{eq:ana_form}
-%\min_y \|\mathcal{R}y-b\|_2^2 + \lambda \|\mathcal{W}^\dagger y\|_1.
-%\end{equation}
-%
-%\noindent We use $\mathcal{W}^\dagger$ to denote the Moore-Penrose pseudoinverse of $\mathcal{W}$; this is the standard operation of wavelet analysis.  In the analysis form, the optimization variable $y$ is an image.  An optimal solution $y^\ast$ should be a good approximation of the original, sharp image.\\
-%
-%If the wavelet synthesis operator is orthogonal, so that ${\mathcal{W}^\ast=\mathcal{W}^\dagger=\mathcal{W}^{-1}}$, we then have ${x=\mathcal{W}^{-1}y}$.  Moreover, the synthesis and analysis formulations are equivalent, in the sense that an optimal solution of one formulation is readily obtained from an optimal solution of the other.\\
-%
-%%Wavelet software packages (e.g. \cite{matlab_wt_2015}) implement fast wavelet analysis and synthesis operators, which we can apply to 
-%
-%% ]]]
-
 \section{Example 1: An Image Deblurring Problem}
 % [[[
 Digital images can be blurred through a variety of means.  For example, the optical system can be out of focus and atmospheric turbulence can cause blurring of astronomical images.  The goal of image deblurring is to recover the original, sharp image by posing the blurring process in a mathematical model.\\
@@ -286,7 +239,7 @@ Another application where an interesting adjoint is involved in the gradient com
 
 \noindent and will be of length $K+N-1$.  We hope to recover the source $s$ and channel responses $h_i$ from the output signals $x_i$.   However, note that there is both a magnitude and phase ambiguity in $h_i$ and $s$, since we can multiply $h_i$ by $\alpha\neq 0$ and divide $s$ by $\alpha$, leaving $x_i$ unchanged.\\
 
-Recently Ahmed et al. \cite{ahmed_2013} published a paper considering blind deconvolution via convex optimization.  Crucial to their method is the following observation.  The convolution $h_i\ast s$ can be formed as a linear operation on the elements of the rank-1 matrix $h_is^T$:
+Recently Ahmed et al. \cite{ahmed_2013} published a paper considering blind deconvolution via convex optimization.  Crucial to their method, which is based on low-rank recovery, is the following observation: the convolution $h_i\ast s$ can be formed as a linear operation on the elements of the rank-1 matrix $h_is^T$:
 
 \[ h_i\ast s = \mathcal{A}(h_is^T). \] 
 
@@ -294,9 +247,16 @@ Recently Ahmed et al. \cite{ahmed_2013} published a paper considering blind deco
 
 For simplicity, let's assume we have a single channel $h$ with observed output $x$.  Using the convolution operator $\mathcal{A}$, we can pose the recovery problem as
 
-\[ \min_{h,s}~ \|x - \mathcal{A}(hs^T)\|_2^2 + \lambda_h\|h\|_1 + \lambda_s \|s\|_1, \] 
+\[ \min_{h,s}~ \|\mathcal{A}(hs^T)-x\|_2^2 + \lambda_h\|h\|_1 + \lambda_s \|s\|_1, \] 
 
 \noindent where we include the terms $\lambda_h\|h\|_1$ and $\lambda_s\|s\|_1$ to promote sparsity in the recovered signals.  To promote other structure in the recovered signals (assuming it is present in the true signals), we can in principle include other terms, such as $\lambda_h\|h\|_{TV}$, the total-variation norm.  Note that since this problem involves quadratic terms in $hs^T$, it is a non-convex problem.\\
+
+The gradients of the differentiable $\ell_2$ error term $g(h,s)=\|\mathcal{A}(hs^T)-x\|_2^2$ are
+
+\begin{align*}
+   \nabla_h g &= \left[\mathcal{A}^\ast\left(A(hs^T) - x\right)\right]s\\
+   \nabla_s g &= \left[\mathcal{A}^\ast\left(A(hs^T) - x\right)\right]^Th.
+\end{align*}
 
 \begin{figure}
 \begin{tikzpicture}[baseline=(hs.center)]
@@ -344,7 +304,9 @@ For simplicity, let's assume we have a single channel $h$ with observed output $
 \label{fig:action_of_A}
 \end{figure}
 
-The operator $\mathcal{A}$ is a little bit strange in that it maps matrices to vectors, so its adjoint is not quite obvious (i.e. we cannot directly compute the conjugate transpose of $\mathcal{A}$).  However, we can directly apply the defining relation for the adjoint.  We consider an arbitrary matrix $X\in\reals^{K\times N}$ and vector $y\in\reals^{K+N-1}$.  The adjoint is defined via
+\noindent The operator $\mathcal{A}$ is a little bit strange in that it maps matrices to vectors, so its adjoint is not quite obvious (i.e. we cannot directly compute the conjugate transpose of $\mathcal{A}$), but we do know that the adjoint maps vectors to matrices.  This fact is apparent in $\nabla_sg$, where we must compute a matrix-vector product with the matrix transpose of $\mathcal{A}^\ast\left(\mathcal{A}(hs^T)-x\right)$.  Note that the matrix transpose of $\mathcal{A}^\ast(\cdot)$ is different than applying another adjoint to $\mathcal{A}^\ast$.\\
+
+To find the adjoint, we can directly apply the defining relation for the adjoint.  We consider an arbitrary matrix $X\in\reals^{K\times N}$ and vector $y\in\reals^{K+N-1}$.  The adjoint is defined via
 
 \begin{equation}
    \label{eq:A_adjoint_def}
@@ -421,8 +383,8 @@ To make all of this work for a Hankel matrix-vector product, say $w=Yz$, where $
 Now that we can compute the action of $\mathcal{A}^\ast(y)$, we can compute gradients and use existing first-order methods.  As an example, we consider a simulated underwater acoustic channel.  A single unknown real source signal is broadcast over two acoustic channels with unknown real impulse responses.  Additionally, zero mean Gaussian noise with standard deviation $0.005$ is added to each output signal.  We extend the blind channel estimation problem to two channels quite naturally:
 
 \begin{align*}
-   \min_{h_i,s} ~&\|y_1 - \mathcal{A}(h_1s^T)\|_2^2 + \lambda_{h}\|h_1\|_1 + \lambda_s\|s\|_1\\
-                 &\|y_2 - \mathcal{A}(h_2s^T)\|_2^2 + \lambda_{h}\|h_2\|_1.
+   \min_{h_i,s} ~&\|\mathcal{A}(h_1s^T) - x_1\|_2^2 + \lambda_{h}\|h_1\|_1 + \lambda_s\|s\|_1\\
+                 &\|\mathcal{A}(h_2s^T) - x_2\|_2^2 + \lambda_{h}\|h_2\|_1.
 \end{align*}
 
 \noindent Further, we may add a differentiable total-variation-like term.  The addition of a total-variation-like term may induce sharp transitions and stretches of nearly constant signal values (e.g. where the channel impulse response is zero for brief periods).  The true total-variation (TV) norm of $h$ may be computed as $\|\mathcal{D}h\|_1$, where $\mathcal{D}$ is the operator that subtracts consecutive pairs of elements of $h$: $\{\mathcal{D}h\}_j = h_{j+1} - h_j$.  We can in fact form $\mathcal{D}$ as a sparse matrix and compute $\mathcal{D}^\ast$ easily.  To ``soften'' the TV norm to a differentiable term, we may use the Huber function, defined as
@@ -431,22 +393,27 @@ Now that we can compute the action of $\mathcal{A}^\ast(y)$, we can compute grad
 
 \noindent The Huber function is commonly used in regression with outliers, as it is linear for $|z|>\delta$, and so it is less sensitive to outliers.  Unlike $\|\cdot\|_1$, the Huber function is differentiable for all $z$.  We can approximate the TV norm with ${\|h\|_\text{TV} \defeq\|\mathcal{D}h\|_1 \approx L_\delta(\mathcal{D}h)/\delta}$.  The augmented problem, with the differentiable total-variation-like term is
 
-\begin{align*}
-   \min_{h_i,s} ~&\|y_1 - \mathcal{A}(h_1s^T)\|_2^2 + \lambda_{h}\|h_1\|_1 + \lambda_{h,\text{TV}}L_\delta(\mathcal{D}h_1)/\delta + \lambda_s\|s\|_1\\
-                 &\|y_2 - \mathcal{A}(h_2s^T)\|_2^2 + \lambda_{h}\|h_2\|_1 + \lambda_{h,\text{TV}}L_\delta(\mathcal{D}h_2)/\delta.
-\end{align*}
+%TODO give this equation a number
+\begin{align}
+   \label{eq:bce_aug}
+   \min_{h_i,s} ~&\|\mathcal{A}(h_1s^T)-x_1\|_2^2 + \lambda_{h,\text{TV}}L_\delta(\mathcal{D}h_1)/\delta + \lambda_{h}\|h_1\|_1+ \lambda_s\|s\|_1\nonumber\\
+                 &\|\mathcal{A}(h_2s^T)-x_2\|_2^2 + \lambda_{h,\text{TV}}L_\delta(\mathcal{D}h_2)/\delta + \lambda_{h}\|h_2\|_1.
+\end{align}
 
 %TODO finish presenting example
+%TODO how to cite Brendan's data?
+It is straightforward to include the ``soft'' TV term in the gradients, and we can use standard first-order algorithms to solve the augmented problem.  Brendan Rideout of the University of Hawai`i provided simulated data containing an impulsive source, two underwater acoustic channel impulse responses, and the two outputs of the underwater channels.  The simulation also added zero mean Gaussian noise with standard deviation $0.005$.  We used the two channel outputs to attempt to recover the impulsive source and channel impulse responses.\\
+
+We take $\lambda_h = 0.1$, $\lambda_s=0.01$, $\lambda_{h,\text{TV}}=0.01$, and $\delta=0.1$ for the Huber functions $L_\delta(\cdot)$.  We initialized $h_i$ and $s$ with zero mean Gaussian random numbers with unit standard deviation. The sults of the recovery are shown in Figure \ref{fig:bce_rec}.  In practice, we may not know the true lengths of $h_i$ and $s$, $K$ and $N$, respectively.  Here we guess $K_\text{est} = K-100$ and $N_\text{est}$ is determined from $K+N-1$, which is the length of the observed output signals $x_i$.  We used Mark Schmidt's software package ``L1General'' to solve the augmented problem (\ref{eq:bce_aug}) \cite{schmidt_2010}.
 
 \begin{figure}
    \centering
    \includegraphics[width=0.5\textwidth]{figures/bce_rec_003_x_trim.pdf}
    \includegraphics[width=0.5\textwidth]{figures/bce_rec_003_h_trim.pdf}
    \includegraphics[width=0.5\textwidth]{figures/bce_rec_003_s_trim.pdf}
-   \caption{Caption}
+   \caption{Blind channel estimation via equation (\ref{eq:bce_aug}) for underwater acoustic impulsive source.  We show the impulse response and our estimate for the first of two channels; the second channel is similar.  The recovered source signal and impulse responses appear remarkably similar, with the major differences being a magnitude ambiguity and a time shift.}
    \label{fig:bce_rec}
 \end{figure}
-
 
 
 % ]]]
