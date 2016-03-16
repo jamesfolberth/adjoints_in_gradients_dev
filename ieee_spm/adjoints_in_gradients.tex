@@ -26,7 +26,7 @@
 %TODO should this be a ``lecture note'' or a ``tips and tricks''?
 
 \begin{document}
-%\title{Fast Computation of the Discrete Adjoint Wavelet Transform}
+%TODO Let's try to find a title that is a bit more vague...
 \title{Application of Adjoint Operators in Gradient Computations}
 \author{James~Folberth and 
         Stephen~Becker%
@@ -85,6 +85,8 @@ The gradient of the differentiable term $g(x)$ is found to be
 
 % ]]]
 
+
+%TODO add in relative error comparison?  pinv is basically the same as true adjoint!
 \section{Example 1: An Image Deblurring Problem}
 % [[[
 Digital images can be blurred through a variety of means.  For example, the optical system can be out of focus and atmospheric turbulence can cause blurring of astronomical images.  The goal of image deblurring is to recover the original, sharp image by posing the blurring process in a mathematical model.\\
@@ -106,6 +108,8 @@ The gradient of the differentiable term ${g(x)=\frac{1}{2}\|\mathcal{RW}x-b\|_2^
 
 \noindent In the case of a blurring PSF, we can apply $\mathcal{R}$ and $\mathcal{R}^\ast$ efficiently in the Fourier domain via the FFT \cite{beck_2009, hansen_2006}.  Wavelet software packages (e.g. {\sc matlab} Wavelet Toolbox \cite{matlab_wt_2015}) implement fast discrete wavelet analysis and synthesis, which correspond to $\mathcal{W}^\dagger$ and $\mathcal{W}$ (we use $\mathcal{A}^\dagger$ to denote the Moore-Penrose pseudoinverse of $\mathcal{A}$).  However, the adjoint wavelet transform is not implemented in software packages and is not discussed in the literature.\\
 %TODO how do we cite "the adjoint transform is not discussed"?
+%     Look in wavelet books.  Could say it's not discussed in standard textbooks such as Mallat, etc.  Check recent books (Daubechies' text probably doesn't have it, because it's old).
+%     Could cite personal communication with Gabriel Peyre.
 
 
 \subsection{The adjoint for orthogonal wavelets}
@@ -208,8 +212,9 @@ Figure \ref{fig:cameraman_200_bior4.4_sym} shows the deblurred cameraman image a
 %TODO comment on sparsity levels of db1 vs bior4.4?  That's not really a fair comparison...
 
 
-
+% maybe mention this if it's not too long
 %TODO include this section too (but beware: it's old!)
+%     Michael Elad Analysis versus synthesis in signal priors discusses this
 %TODO briefly mention P. Combettes one theorem regarding unequivalence of analysis and synthesis formulation
 %     for nonorthogonal transforms (and how the proximal mapping plays into why).
 %\subsection{Analysis Formulation}
@@ -228,7 +233,7 @@ Figure \ref{fig:cameraman_200_bior4.4_sym} shows the deblurred cameraman image a
 
 % ]]]
 
-%TODO might have to cut this out if the problem doesn't recover things well
+
 %TODO perhaps introduce problem as min \sum_i \|x_i - h_i\ast s\|_2^2 + \|h_i\|_1 + \|s\|_1
 %     then introduce the linear operator \mathcal{A}
 \section{Example 2: Blind Channel Estimation}
@@ -237,19 +242,19 @@ Another application where an interesting adjoint is involved in the gradient com
 
 \[ x_i = h_i\ast s, \] 
 
-\noindent and will be of length $K+N-1$.  We hope to recover the source $s$ and channel responses $h_i$ from the output signals $x_i$.   However, note that there is both a magnitude and phase ambiguity in $h_i$ and $s$, since we can multiply $h_i$ by $\alpha\neq 0$ and divide $s$ by $\alpha$, leaving $x_i$ unchanged.\\
+\noindent and will be of length $K+N-1$ (we use $\ast$ to denote a linear convolution).  We hope to recover the source $s$ and channel responses $h_i$ from the output signals $x_i$.   However, note that there is both a magnitude and phase ambiguity in $h_i$ and $s$, since we can multiply $h_i$ by $\alpha\neq 0$ and divide $s$ by $\alpha$, leaving $x_i$ unchanged.\\
 
 Recently Ahmed et al. \cite{ahmed_2013} published a paper considering blind deconvolution via convex optimization.  Crucial to their method, which is based on low-rank recovery, is the following observation: the convolution $h_i\ast s$ can be formed as a linear operation on the elements of the rank-1 matrix $h_is^T$:
 
 \[ h_i\ast s = \mathcal{A}(h_is^T). \] 
 
-\noindent The operation $x_i=\mathcal{A}(h_is^T)$ acts on the $K\times N$ matrix $h_is^T$ by summing each antidiagonal, producing an element of $x_i$.  This action is illustrated in Figure \ref{fig:action_of_A}.\\
+\noindent The operation $x_i=\mathcal{A}(h_is^T)$ acts on the $K\times N$ matrix $h_is^T$ by summing each anti-diagonal, producing an element of $x_i$.  This action is illustrated in Figure \ref{fig:action_of_A}.  In an implementation, we of course compute $x_i=h_i\ast s$ via an FFT.\\
 
-For simplicity, let's assume we have a single channel $h$ with observed output $x$.  Using the convolution operator $\mathcal{A}$, we can pose the recovery problem as
+For simplicity, let's assume we have a single channel $h$ with observed output $x$; we will extend the problem to two channels in an example to follow.  Using the convolution operator $\mathcal{A}$, we can pose the recovery problem as
 
 \[ \min_{h,s}~ \|\mathcal{A}(hs^T)-x\|_2^2 + \lambda_h\|h\|_1 + \lambda_s \|s\|_1, \] 
 
-\noindent where we include the terms $\lambda_h\|h\|_1$ and $\lambda_s\|s\|_1$ to promote sparsity in the recovered signals.  To promote other structure in the recovered signals (assuming it is present in the true signals), we can in principle include other terms, such as $\lambda_h\|h\|_{TV}$, the total-variation norm.  Note that since this problem involves quadratic terms in $hs^T$, it is a non-convex problem.\\
+\noindent where we include the terms $\lambda_h\|h\|_1$ and $\lambda_s\|s\|_1$ to promote sparsity in the recovered signals.  To promote other structure in the recovered signals (assuming it is present in the true signals), we can in principle include other terms, such as $\|h\|_{TV}$, the total-variation norm.  Note that since this problem involves quadratic terms in $hs^T$, it is a non-convex problem.\\
 
 The gradients of the differentiable $\ell_2$ error term $g(h,s)=\|\mathcal{A}(hs^T)-x\|_2^2$ are
 
@@ -300,13 +305,13 @@ The gradients of the differentiable $\ell_2$ error term $g(h,s)=\|\mathcal{A}(hs
    \draw [thick,->,>=stealth,shorten >=-9mm,shorten <=-4mm,color=blue] (hs-4-4.center) to (hs-7-1.center);
    % ]]]
 \end{tikzpicture}
-\caption{How $x_i$ is formed via $\mathcal{A}(h_is^T)$.  Adapted from \cite{romberg_2013}.}%TODO
+\caption{How the channel output $x_i$ is formed via $\mathcal{A}(h_is^T)$.  Each entry of $x_i$ is the sum of an anti-diagonal of $h_is^T$.  Notice that all convolution terms appear in the outer product $h_is^T$, so $\mathcal{A}$ is indeed just a linear operator.  Adapted from \cite{romberg_2013}.}%TODO
 \label{fig:action_of_A}
 \end{figure}
 
 \noindent The operator $\mathcal{A}$ is a little bit strange in that it maps matrices to vectors, so its adjoint is not quite obvious (i.e. we cannot directly compute the conjugate transpose of $\mathcal{A}$), but we do know that the adjoint maps vectors to matrices.  This fact is apparent in $\nabla_sg$, where we must compute a matrix-vector product with the matrix transpose of $\mathcal{A}^\ast\left(\mathcal{A}(hs^T)-x\right)$.  Note that the matrix transpose of $\mathcal{A}^\ast(\cdot)$ is different than applying another adjoint to $\mathcal{A}^\ast$.\\
 
-To find the adjoint, we can directly apply the defining relation for the adjoint.  We consider an arbitrary matrix $X\in\reals^{K\times N}$ and vector $y\in\reals^{K+N-1}$.  The adjoint is defined via
+To find the adjoint, we must use the definition of the adjoint operator on Hilbert spaces.  We consider an arbitrary matrix $X\in\reals^{K\times N}$ and vector $y\in\reals^{K+N-1}$.  The adjoint is defined via
 
 \begin{equation}
    \label{eq:A_adjoint_def}
@@ -379,7 +384,7 @@ To make all of this work for a Hankel matrix-vector product, say $w=Yz$, where $
 
 % TODO What example of this should we do?
 %      We can use Brendan's simulated data and just publish the data on github?  Get permission first!  This example is still a work in progress however!  Choice of parameters is important.
-%      \cite some of Brendan's papers?
+%      \cite some of Brendan's papers?  as personal communication or whatever Brendan's preference is
 Now that we can compute the action of $\mathcal{A}^\ast(y)$, we can compute gradients and use existing first-order methods.  As an example, we consider a simulated underwater acoustic channel.  A single unknown real source signal is broadcast over two acoustic channels with unknown real impulse responses.  Additionally, zero mean Gaussian noise with standard deviation $0.005$ is added to each output signal.  We extend the blind channel estimation problem to two channels quite naturally:
 
 \begin{align*}
@@ -393,35 +398,36 @@ Now that we can compute the action of $\mathcal{A}^\ast(y)$, we can compute grad
 
 \noindent The Huber function is commonly used in regression with outliers, as it is linear for $|z|>\delta$, and so it is less sensitive to outliers.  Unlike $\|\cdot\|_1$, the Huber function is differentiable for all $z$.  We can approximate the TV norm with ${\|h\|_\text{TV} \defeq\|\mathcal{D}h\|_1 \approx L_\delta(\mathcal{D}h)/\delta}$.  The augmented problem, with the differentiable total-variation-like term is
 
-%TODO give this equation a number
 \begin{align}
    \label{eq:bce_aug}
    \min_{h_i,s} ~&\|\mathcal{A}(h_1s^T)-x_1\|_2^2 + \lambda_{h,\text{TV}}L_\delta(\mathcal{D}h_1)/\delta + \lambda_{h}\|h_1\|_1+ \lambda_s\|s\|_1\nonumber\\
                  &\|\mathcal{A}(h_2s^T)-x_2\|_2^2 + \lambda_{h,\text{TV}}L_\delta(\mathcal{D}h_2)/\delta + \lambda_{h}\|h_2\|_1.
 \end{align}
 
-%TODO finish presenting example
 %TODO how to cite Brendan's data?
 It is straightforward to include the ``soft'' TV term in the gradients, and we can use standard first-order algorithms to solve the augmented problem.  Brendan Rideout of the University of Hawai`i provided simulated data containing an impulsive source, two underwater acoustic channel impulse responses, and the two outputs of the underwater channels.  The simulation also added zero mean Gaussian noise with standard deviation $0.005$.  We used the two channel outputs to attempt to recover the impulsive source and channel impulse responses.\\
 
-We take $\lambda_h = 0.1$, $\lambda_s=0.01$, $\lambda_{h,\text{TV}}=0.01$, and $\delta=0.1$ for the Huber functions $L_\delta(\cdot)$.  We initialized $h_i$ and $s$ with zero mean Gaussian random numbers with unit standard deviation. The sults of the recovery are shown in Figure \ref{fig:bce_rec}.  In practice, we may not know the true lengths of $h_i$ and $s$, $K$ and $N$, respectively.  Here we guess $K_\text{est} = K-100$ and $N_\text{est}$ is determined from $K+N-1$, which is the length of the observed output signals $x_i$.  We used Mark Schmidt's software package ``L1General'' to solve the augmented problem (\ref{eq:bce_aug}) \cite{schmidt_2010}.
+We take $\lambda_h = 0.1$, $\lambda_s=0.01$, $\lambda_{h,\text{TV}}=0.01$, and $\delta=0.1$ for the Huber functions $L_\delta(\cdot)$.  We initialized $h_i$ and $s$ with zero mean Gaussian random numbers with unit standard deviation.  In practice, we may not know the true lengths of $h_i$ and $s$, $K$ and $N$, respectively.  We do know the length of the observed signals, which is $K+N-1$.  In this example, $K=894$ and $N=1717$, and we guess $K_\text{est}=794$ and $N_\text{est}=1817$.  We used Mark Schmidt's software package ``L1General'' to solve the augmented problem (\ref{eq:bce_aug}) \cite{schmidt_2010}.\\
+
+The results of the recovery are shown in Figure \ref{fig:bce_rec}.  We show the output and channel impulse response for only the first channel; the second channel is similar.  With the exception of minor variations, the estimated channel response is a time-shifted and rescaled version of the true channel response.  There appears to be a corresponding delay and scaling factor for the estimated source signal.\\ 
+
 
 \begin{figure}
    \centering
    \includegraphics[width=0.5\textwidth]{figures/bce_rec_003_x_trim.pdf}
    \includegraphics[width=0.5\textwidth]{figures/bce_rec_003_h_trim.pdf}
    \includegraphics[width=0.5\textwidth]{figures/bce_rec_003_s_trim.pdf}
-   \caption{Blind channel estimation via equation (\ref{eq:bce_aug}) for underwater acoustic impulsive source.  We show the impulse response and our estimate for the first of two channels; the second channel is similar.  The recovered source signal and impulse responses appear remarkably similar, with the major differences being a magnitude ambiguity and a time shift.}
+   \caption{Blind channel estimation via equation (\ref{eq:bce_aug}) for underwater acoustic impulsive source.  Shown are the true and estimated first channel output, first channel impulse response, and source.  The estimated source signal and impulse responses appear remarkably similar to the true signals.  The major differences are a magnitude ambiguity and a time shift.}
    \label{fig:bce_rec}
 \end{figure}
-
 
 % ]]]
 
 \section{Discussion}
 % [[[
+We have demonstrated a framework for computing the adjoint of discrete wavelet transforms, which arise in gradient computations in optimization problems.  The framework separates the action of the wavelet transform and the signal extension operator.  The half-point symmetric extension is a common choice and we have provided its transpose, but other extension operators can readily be cast into the framework.  For many practical purposes, however, it appears that the adjoint operator is remarkably close to the pseudoinverse transform, which requires almost zero extra work for the programmer.\\
 
-
+Another interesting operator and its adjoint appear in a blind channel estimation optimization problem.  A few interesting linear algebraic tricks are used to arrive at a fast implementation of the adjoint operator.  For an impulsive source sent through a simulated underwater acoustic channel, the optimization problem is able to recover a slightly modified version of the true signals.\\
 
 % ]]]
 
