@@ -17,5 +17,18 @@ Most of the code is in MATLAB.  I've also put [Beck's FISTA code](https://web.ie
 ## Julia
 There is a bit of experimental code in the julia directory.  We tried to see how fast automatic differentiation could compute the gradient.
 
+
+# Blind Channel Estimation - Unconstrained Formulation
+Suppose a single unknown source signal is sent over a few channels with unknown impulse responses.  We observe and record the output of each channel and wish to recover the source signal and channel impulse responses.  We pose an unconstrained non-convex problem and solve it with Mark Schmidt's L1General.  To use the routines in L1General, we must provide it with a gradient subroutine.  The gradients of the differentiable terms in our formulation involve an interesting adjoint, which we show how to compute efficiently.
+
+
+# IEEE SPM
+We're working on a ``lecture note'' for IEEE's Signal Processing Magazine that describes a framework for computing the adjoint of fast discrete wavelet transform and also presents the BCE problem and the interesting adjoint.
+
+
+# SIAM Front Range Applied Math Student Conference
+I gave a quick talk at the 2016 SIAM FRAMSC in Denver, CO.  There are a bunch of slides, many of which I didn't present!
+
+
   1. Amir Beck and Marc Teboulle, *A Fast Iterative Shrinkage-Thresholding Algorithm for Linear Inverse Problems*, SIAM Journal on Imaging Sciences 2 (2009).
   2. Patrick L. Combettes and Jean-Christophe Pesquet, *A Douglas–Rachford Splitting Approach to Nonsmooth Convex Variational Signal Recovery*, IEEE Journal of Selected Topics in Signal Processing (2007).
