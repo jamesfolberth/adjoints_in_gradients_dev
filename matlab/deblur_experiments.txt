@@ -1,0 +1,20 @@
+db1+sym:
+   pinv:    
+      ||x|| rel error: 7.203749e-02 
+      ||blurred|| rel: 2.719515e-02
+      %nnz           : 72.99
+   adjoint:
+      ||x|| rel error: 7.210046e-02
+      ||blurred|| rel: 2.720508e-02
+      %nnz           : 72.89
+
+bior4.4+sym:
+   pinv:    
+      ||x|| rel error: 7.250809e-02 
+      ||blurred|| rel: 2.719190e-02
+      %nnz           : 57.03
+   adjoint:
+      ||x|| rel error: 7.239745e-02
+      ||blurred|| rel: 2.716331e-02
+      %nnz           : 57.67
+

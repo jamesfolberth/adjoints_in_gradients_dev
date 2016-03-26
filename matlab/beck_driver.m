@@ -15,6 +15,17 @@ B=imfilter(X,P,'symmetric');
 randn('seed',314);
 Bobs=B + 1e-3*randn(size(B));
 
+% from Beck+Teboulle's deblur_...
+% used for blurred image reconstruction error
+[m,n]=size(Bobs);
+Pbig=padPSF(P,[m,n]);
+trans=@(X) 1/sqrt(prod(size(Bobs)))*fft2(X);
+itrans=@(X) sqrt(prod(size(Bobs)))*ifft2(X);
+% computng the eigenvalues of the blurring matrix         
+Sbig=fft2(circshift(Pbig,1-center));
+Btrans = trans(Bobs);
+
+
 % show original and observed blurred image
 %figure(1)
 %%subplot(1,2,1)
@@ -71,6 +82,7 @@ imshow(Xout,[])
 title('Recovered')
 
 fprintf(1, 'recovery l2-error (rel) = %e\n', norm(Xout-X,'fro')/norm(X,'fro'));
+fprintf(1, 'blurred l2-error (rel) = %e\n', norm(Sbig.*trans(Xout) - Btrans,'fro')/norm(Btrans,'fro'));
 fprintf(1, 'recovery nnz (%%nnz) = %d (%3.2f)\n', sum(abs(X_iter(:))>0),sum(abs(X_iter(:))>0)/numel(X_iter)*100);
 %fprintf(1, 'recovery %%(big coeffs) = %3.2f\n', sum(abs(X_iter(:)) > 1e-4)/numel(X_iter)*100);
 
