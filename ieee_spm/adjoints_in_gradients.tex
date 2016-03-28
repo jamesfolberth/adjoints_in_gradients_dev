@@ -31,8 +31,10 @@
 %TODO should this be a ``lecture note'' or a ``tips and tricks''?
 
 \begin{document}
-%TODO Let's try to find a title that is a bit more vague...
-\title{Application of Adjoint Operators in Gradient Computations}
+%    Let's try to find a title that is a bit more vague...
+%\title{Application of Adjoint Operators in Gradient Computations}
+%\title{Adjoint Operators in Image Deblurring and Blind Channel Estimation Problems}
+\title{Adjoint Operators in an Image Deblurring and a Blind Channel Estimation Problem}
 \author{James~Folberth and 
         Stephen~Becker%
 \thanks{J. Folberth and S. Becker are with the Department
@@ -46,7 +48,7 @@ Boulder, CO, 80309 USA}}
 
 % For IEEE, Don't use math or other special symbols; greek probably okay.
 \begin{abstract}
-   When using first-order optimization algorithms, it is often the case that the user must supply the gradient of the differentiable terms in the objective function.  We consider two example problems that have a Euclidean error term involving a linear operation on the problem variables.  The gradient of the Euclidean error term involves both the linear operator and its adjoint, which, in our examples, is not known in the literature.  The first example is an image deblurring problem, where the linear operation is multi-stage wavelet synthesis.  Our formulation of the adjoint holds for a variety of boundary conditions, which allows the formulation to generalize to a larger class of problems.  The second example is a blind channel estimation problem taken from the convex optimization literature; the linear operation is convolution, but with a slight twist.  In each example, we show how the adjoint operator can be applied efficiently.
+   When using first-order optimization algorithms, it is often the case that the user must supply the gradient of the differentiable terms in the objective function.  We consider two example problems that have a Euclidean error term involving a linear operation on the problem variables.  The gradient of the Euclidean error term involves both the linear operator and its adjoint, which, in our examples, is not discussed in the literature.  The first example is an image deblurring problem, where the linear operation is multi-stage wavelet synthesis.  Our formulation of the adjoint holds for a variety of boundary conditions, which allows the formulation to generalize to a larger class of problems.  The second example is a blind channel estimation problem taken from the convex optimization literature; the linear operation is convolution, but with a slight twist.  In each example, we show how the adjoint operator can be applied efficiently.
 \end{abstract}
 
 \subsection*{Prerequisites}
