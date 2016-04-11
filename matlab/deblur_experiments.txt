@@ -1,20 +1,124 @@
-db1+sym:
-   pinv:    
-      ||x|| rel error: 7.203749e-02 
-      ||blurred|| rel: 2.719515e-02
-      %nnz           : 72.99
-   adjoint:
-      ||x|| rel error: 7.210046e-02
-      ||blurred|| rel: 2.720508e-02
-      %nnz           : 72.89
+======================================
+cameraman.pgm:
+   db1+sym: 200 iterations
+      pinv:    
+         ||x|| rel error: 7.203749e-02 
+         ||blurred|| rel: 2.719515e-02
+         %nnz           : 72.99
+      adjoint:
+         ||x|| rel error: 7.210046e-02
+         ||blurred|| rel: 2.720508e-02
+         %nnz           : 72.89
+   
+   bior4.4+sym: 200 iterations
+      pinv:    
+         ||x|| rel error: 7.250809e-02 
+         ||blurred|| rel: 2.719190e-02
+         %nnz           : 57.03
+      adjoint:
+         ||x|| rel error: 7.239745e-02
+         ||blurred|| rel: 2.716331e-02
+         %nnz           : 57.67
 
-bior4.4+sym:
-   pinv:    
-      ||x|| rel error: 7.250809e-02 
-      ||blurred|| rel: 2.719190e-02
-      %nnz           : 57.03
-   adjoint:
-      ||x|| rel error: 7.239745e-02
-      ||blurred|| rel: 2.716331e-02
-      %nnz           : 57.67
+======================================
+texmos3.pgm:
+   bior4.4+sym: 200 iterations
+      pinv:
+         ||x|| rel error: 3.415700e-02
+         ||blurred|| rel: 4.106031e-02
+         %nnz           : 48.14
+      adjoint:
+         ||x|| rel error: 3.393974e-02
+         ||blurred|| rel: 4.106432e-02
+         %nnz           : 48.71
+
+======================================
+clock.pgm:
+   bior4.4+sym: 200 iterations
+      pinv:
+         ||x|| rel error: 3.346272e-02
+         ||blurred|| rel: 1.678860e-02
+         %nnz           : 54.31
+      adjoint:
+         ||x|| rel error: 3.489007e-02
+         ||blurred|| rel: 1.669270e-02
+         %nnz           : 54.85
+
+   bior4.4+sym: 100 iterations
+      pinv:
+         ||x|| rel error: 3.680370e-02
+         ||blurred|| rel: 1.680530e-02
+         %nnz           : 61.80
+      adjoint:
+         ||x|| rel error: 3.928826e-02
+         ||blurred|| rel: 1.666718e-02
+         %nnz           : 62.83
+
+======================================
+resolution.pgm:
+   bior4.4+sym: 100 iterations
+      pinv:
+         ||x|| rel error: 6.748847e-02
+         ||blurred|| rel: 1.628299e-03
+         %nnz           : 54714 (65.47)
+      adjoint:
+         ||x|| rel error: 6.544167e-02
+         ||blurred|| rel: 1.493920e-03
+         %nnz           : 54079 (64.71)
+
+   bior4.4+sym: 200 iterations
+      pinv:
+         ||x|| rel error: 5.144164e-02
+         ||blurred|| rel: 1.219656e-03
+         %nnz           : 51474 (61.59)
+      adjoint:
+         ||x|| rel error: 4.992631e-02
+         ||blurred|| rel: 1.134878e-03
+         %nnz           : 50964 (60.98)
+
+   bior4.4+sym: 2500 iterations
+      pinv:
+         ||x|| rel error: 5.212027e-02
+         ||blurred|| rel: 9.670791e-04
+         %nnz           : 24854 (29.74)
+      adjoint:
+         ||x|| rel error: 4.998863e-02
+         ||blurred|| rel: 9.448133e-04
+         %nnz           : 24431 (29.23)
+
+
+   db1+sym: 100 iterations
+      pinv:
+         ||x|| rel error: 6.666995e-02
+         ||blurred|| rel: 1.588476e-03
+         %nnz           : 60000 (89.61)
+      adjoint:
+         ||x|| rel error: 6.647724e-02
+         ||blurred|| rel: 1.567502e-03
+         %nnz           : 59954 (89.55)
+
+   db1+sym: 200 iterations
+      pinv:
+         ||x|| rel error: 4.880490e-02
+         ||blurred|| rel: 1.139492e-03
+         %nnz           : 54225 (80.99)
+      adjoint:
+         ||x|| rel error: 4.868909e-02
+         ||blurred|| rel: 1.136408e-03
+         %nnz           : 54100 (80.80)
+
+   db1+sym: 2500 iterations
+      pinv:
+         ||x|| rel error: 4.499607e-02
+         ||blurred|| rel: 8.910244e-04
+         %nnz           : 21456 (32.05)
+      adjoint:
+         ||x|| rel error: 4.493186e-02
+         ||blurred|| rel: 8.909578e-04
+         %nnz           : 21301 (31.81)
+
+
+
+
+
 

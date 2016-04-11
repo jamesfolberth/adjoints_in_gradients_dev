@@ -1,4 +1,4 @@
-function [Xout] = beck_driver()
+function [] = fval_driver()
 
 addpath('./beck_FISTA_matlab_files/HNO')
 
@@ -29,17 +29,6 @@ Sbig=fft2(circshift(Pbig,1-center));
 Btrans = trans(Bobs);
 
 
-% show original and observed blurred image
-%figure(1)
-%%subplot(1,2,1)
-%%imshow(X,[])
-%%title('Original')
-%%subplot(1,2,2)
-%%imshow(Bobs,[])
-%%title('Blur+Noise')
-%imshow(Bobs,[])
-%error('stop here')
-
 % FISTA parameters
 %lambda = 1e-4; % used in B+T's example code
 lambda = 2e-5; % used in FISTA SIAM paper
@@ -54,9 +43,6 @@ dwtmode('zpd', 'nodisp');
 
 %extmode = 'zpd'
 extmode = 'sym'
-
-adjoint_mode = 'pinv';
-%adjoint_mode = 'adjoint';
 
 levels = 3;
 
@@ -73,43 +59,44 @@ L = build_wavedec_levels_2d(size(Bobs), levels, wname, extmode);
 
 WAn = @(Y) wavelet_analysis_2d(Y, wname, extmode, levels);
 WSy = @(X) wavelet_synthesis_2d(X, L, size(Bobs), wname, extmode, levels);
-WSyAd = @(Y) wavelet_synthesis_adjoint_2d(Y, wname, dwname, extmode, levels, adjoint_mode);
+WSyAd_pinv = @(Y) wavelet_synthesis_adjoint_2d(Y, wname, dwname, extmode, levels, 'pinv');
+WSyAd = @(Y) wavelet_synthesis_adjoint_2d(Y, wname, dwname, extmode, levels, 'adjoint');
 
-%[Xout,fun_all]=deblur_dwt_FISTA_trans_direct(Bobs,P,center,WAn,WSy,WSyAd,lambda,pars);
-[Xout,fun_all,X_iter]=deblur_dwt_FISTA_trans_direct(Bobs,P,center,WAn,WSy,WSyAd,lambda,pars,X); % X is used for SSIM
+[Xout_pinv,fun_all_pinv,X_iter_pinv]=deblur_dwt_FISTA_trans_direct(Bobs,P,center,WAn,WSy,WSyAd_pinv,lambda,pars,X);
+[Xout,fun_all,X_iter]=deblur_dwt_FISTA_trans_direct(Bobs,P,center,WAn,WSy,WSyAd,lambda,pars,X); %
 
-% show the original and recovered images
-%figure(2)
-%subplot(1,2,1)
-%imshow(X,[])
-%title('Original')
-%subplot(1,2,2)
-%imshow(Xout,[])
-%title('Recovered')
-
-fprintf(1, 'recovery l2-error (rel) = %e\n', norm(Xout-X,'fro')/norm(X,'fro'));
-fprintf(1, 'blurred l2-error (rel) = %e\n', norm(Sbig.*trans(Xout) - Btrans,'fro')/norm(Btrans,'fro'));
-fprintf(1, 'recovery nnz (%%nnz) = %d (%3.2f)\n', sum(abs(X_iter(:))>0),sum(abs(X_iter(:))>0)/numel(X_iter)*100);
-%fprintf(1, 'recovery %%(big coeffs) = %3.2f\n', sum(abs(X_iter(:)) > 1e-4)/numel(X_iter)*100);
+% run forever to get fstar
+pars_tmp = pars; pars_tmp.MAXITER = 2*pars.MAXITER;;
+[Xout_star,fun_all_star,X_iter]=deblur_dwt_FISTA_trans_direct(Bobs,P,center,WAn,WSy,WSyAd,lambda,pars_tmp,X);
+fstar = min(fun_all_star(:));
 
 % show the recovered image and some other info
-%figure(3)
-%imshow(Xout,[])
-%imwrite(Xout, 'deblurred_images/tmp.pgm');
-%title(sprintf('Recovered - iter=%d, wname=''%s'', extmode=''%s''', pars.MAXITER, wname, extmode));
+imwrite(Xout_pinv, 'deblurred_images/tmp_pinv.pgm');
+imwrite(Xout, 'deblurred_images/tmp.pgm');
+%imwrite(Xout_star, 'deblurred_images/tmp_star.pgm');
 
-% Plot the decay of non-zero values in wavelet coeffs
-%figure(4);
-%wc = sort(abs(X_iter(:)),'descend');
-%semilogy(wc);
-%axis([0 1e5 1e-10 1e2]);
 
 % Plot the function values vs number of iterations
 figure(5)
-fstar = norm(Sbig.*trans(X)-Btrans,'fro')^2+lambda*sum(sum(abs(WAn(X))));
-semilogy(1:pars.MAXITER, fun_all-fstar);
+iters = 1:pars.MAXITER;
+clf();
+hold on;
+semilogy(iters, fun_all-fstar, 'LineWidth', 3);
+semilogy(iters, fun_all_pinv-fstar, '--', 'LineWidth', 3);
+set(gca, 'YScale', 'log');
+hold off;
+legend('true adjoint', 'pinv approx');
 xlabel('Iteration');
 ylabel('Objective value');
+
+%figure(5)
+%iters = 1:pars.MAXITER;
+%plot(iters, fun_all_pinv, iters, fun_all, 'LineWidth', 3);
+%legend('pinv approx', 'true adjoint', 'Location', 'SouthEast');
+%axis([1 numel(fun_all) .6 .9]);
+%xlabel('Iteration');
+%ylabel('SSIM');
+
 
 end
 

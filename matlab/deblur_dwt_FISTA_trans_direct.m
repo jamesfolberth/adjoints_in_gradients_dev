@@ -1,4 +1,4 @@
-function [X_out,fun_all,X_iter]=deblur_dwt_FISTA_trans_direct(Bobs,P,center,WAn,WSy,WSyAd,lambda,pars)
+function [X_out,fun_all,X_iter]=deblur_dwt_FISTA_trans_direct(Bobs,P,center,WAn,WSy,WSyAd,lambda,pars,X)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %This function implements FISTA for solving the linear inverse problem with 
 % an orthogonal l1 wavelet regularizer and either reflexive or periodic boundary
@@ -45,6 +45,8 @@ function [X_out,fun_all,X_iter]=deblur_dwt_FISTA_trans_direct(Bobs,P,center,WAn,
 %                                                      'reflexive'  (default)  or 'periodic
 % pars.B - upper frame inequality bound (B=1 for orthogonal transformation)
 % 
+% X .................................. Original, unblurred image.  Used only for SSIM
+%
 % OUTPUT
 % 
 % X_out ......................... Solution of the problem
@@ -85,6 +87,10 @@ end
 if (nargout>=2)
     fun_all=[];
 end
+
+ssim_K = [0.01 0.03];
+ssim_window = fspecial('gaussian', 11, 1.5);
+ssim_L = 1;
 
 [m,n]=size(Bobs);
 Pbig=padPSF(P,[m,n]);
@@ -143,8 +149,10 @@ for i=1:MAXITER
     % the function values vector fun_all if exists.
     t=sum(sum(abs(X_iter)));
     WX_iter = WSy(X_iter);
+
     fun_val=norm(Sbig.*trans(WX_iter)-Btrans,'fro')^2+lambda*t;
-    if (nargout==2)
+    %[fun_val,~] = ssim_index(X, reshape(WSy(X_iter), size(X)), ssim_K, ssim_window, ssim_L);
+    if (nargout>=2)
         fun_all=[fun_all;fun_val];
     end
     % printing the information of the current iteration

@@ -34,7 +34,7 @@
 %    Let's try to find a title that is a bit more vague...
 %\title{Application of Adjoint Operators in Gradient Computations}
 %\title{Adjoint Operators in Image Deblurring and Blind Channel Estimation Problems}
-\title{Adjoint Operators in an Image Deblurring and a Blind Channel Estimation Problem}
+\title{Adjoint Operators in Image Deblurring and Blind Channel Estimation Problems}
 \author{James~Folberth and 
         Stephen~Becker%
 \thanks{J. Folberth and S. Becker are with the Department
@@ -48,69 +48,68 @@ Boulder, CO, 80309 USA}}
 
 % For IEEE, Don't use math or other special symbols; greek probably okay.
 \begin{abstract}
-   When using first-order optimization algorithms, it is often the case that the user must supply the gradient of the differentiable terms in the objective function.  We consider two example problems that have a Euclidean error term involving a linear operation on the problem variables.  The gradient of the Euclidean error term involves both the linear operator and its adjoint, which, in our examples, is not discussed in the literature.  The first example is an image deblurring problem, where the linear operation is multi-stage wavelet synthesis.  Our formulation of the adjoint holds for a variety of boundary conditions, which allows the formulation to generalize to a larger class of problems.  The second example is a blind channel estimation problem taken from the convex optimization literature; the linear operation is convolution, but with a slight twist.  In each example, we show how the adjoint operator can be applied efficiently.
+   First-order optimization algorithms require the gradient of the differentiable terms in the objective function.  We consider two example problems that have an Euclidean error term involving a linear operation on the problem variables.  The gradient of the Euclidean error term involves both the linear operator and its adjoint, which, in our examples, is not discussed in the literature.  The first example is an image deblurring problem, where the linear operation is multi-stage wavelet synthesis.  Our formulation of the adjoint holds for a variety of boundary conditions, which allows the formulation to generalize to a larger class of problems.  The second example is a blind channel estimation problem taken from the convex optimization literature; the linear operation is convolution, but with a slight twist.  In each example, we show how the adjoint operator can be applied efficiently.
 \end{abstract}
 
 \subsection*{Prerequisites}
 The reader should be familiar with linear algebra, wavelets, and basic Fourier analysis.  Knowledge of first-order iterative optimization algorithms is beneficial for motivating the fast adjoint computation, but should not be necessary to understand the adjoint computation itself.  We begin by briefly motivating the need for a fast adjoint operator and then turn toward the two examples.\\
 
 
-%TODO Not sure what to call this section
-
 %     How do we cite Vandenberghe's course notes? http://www.seas.ucla.edu/~vandenbe/ee236c.html
 %     Could also cite Beck+Teboulle's book chapter
-\section{A Generic Optimization Problem}
-% [[[
-In this lecture note we consider as examples a few variants of the optimization problem
-
-\begin{equation}
-\label{eq:model_problem}
-\min_x ~\frac{1}{2}\|\mathcal{A}x-b\|_2^2 + \lambda \|x\|_1,
-\end{equation}
-
-\noindent where $\mathcal{A}$ is a linear operator, $\|\cdot\|_2$ is the $\ell_2$ norm, and $\|\cdot\|_1$ is the $\ell_1$ norm.  Loosely speaking, we pose this problem to attempt to find an $x$ such that $\mathcal{A}x$ is close to $b$, but also such that $x$ is sparse.  This problem usually comes up when we try to discover an unknown signal $x$ from an observed signal $b$, subject to some structural information about the unknown signal $x$ (sparsity, in this case).\\
-
-\noindent Let $g(x) = \frac{1}{2}\|\mathcal{A}x-b\|_2^2$ and $h(x)=\lambda \|x\|_1$.  Notice that $g(x)$ is convex and differentiable, and $h(x)$ is convex but non-differentiable.  The scalarization parameter $\lambda$ controls the relative importance of the approximation error $g(x)$ and the sparsity heuristic $\|x\|_1$.  Loosely speaking, larger $\lambda$ should yield a sparser solution.\\
-
-Even though $h(x)$ is non-differentiable, there exist many efficient algorithms for solving the above problem and its variants \cite{beck_2009b}.  Popular methods include the proximal gradient method and its variants, which include iterative shrinkage thresholding and projected gradient.  Crucial to the speed of these methods is an efficient proximal mapping (prox-operator) for the non-differentiable term $h(x)$.  The proximal mapping is defined as
-
-\[ \opn{prox}_h(x) = \opn{argmin}_{y} \left(h(y) + \dfrac{1}{2}\|y-x\|_2^2\right). \] 
-
-\noindent The proximal mapping can be thought of as finding the point minimizing $h(y)$ plus a simple quadratic model about the point $x$.  For $h(y) = \|y\|_1$, the proximal mapping is the shrinkage (``soft-threshold'') operator and takes the following particularly simple form:
-
-\[ \opn{prox}_h(x) = \left\{\begin{array}{ll} x_i - 1 & x_i \ge 1\\ 0 & |x_i| < 1\\ x_i + 1 & x_i \le 1.\end{array}\right. \]
-
-\noindent The main step of a simple proximal gradient method is
-
-\[ x^{(k)} = \opn{prox}_{t_k h}\left(x^{(k-1)} - t_k \nabla g(x^{(k-1)})\right), \] 
-
-\noindent with step size $t_k>0$.  The reader may note that this update resembles the simple gradient descent update for minimizing $g(x)$, with the exception of the proximal mapping which handles the non-differentiable term $h(x)$.  It is clear that an efficient proximal mapping is desired, as the proximal mapping must be evaluated at each step of the simple proximal gradient method.\\
-
-The gradient of the differentiable term $g(x)$ is found to be
-
-\[ \nabla g(x) = \mathcal{A}^\ast(\mathcal{A}x-b). \] 
-
-\noindent It is during the evaluation of the gradient $\nabla g(x)$ that we need efficient means of computing the action of $\mathcal{A}$ and its adjoint $\mathcal{A}^\ast$.  As we will see in the next sections, the operator $\mathcal{A}$ tends to have a well known, efficient forward and (pseudo)inverse transform (e.g. discrete cosine transform, discrete wavelet transform).  For unitary and orthogonal operators, the adjoint is identically the inverse.  For non-unitary and non-orthogonal operators, however, applying the adjoint efficiently may pose a problem.  The following examples show cases where a fast adjoint operation is possible.
-
-% ]]]
+%TODO trim this down (e.g. remove prox stuff) and move to after introducing image deblurring problem
+%\section{A Generic Optimization Problem}
+%% [[[
+%In this lecture note we consider as examples a few variants of the optimization problem
+%
+%\begin{equation}
+%\label{eq:model_problem}
+%\min_x ~\frac{1}{2}\|\mathcal{A}x-b\|_2^2 + \lambda \|x\|_1,
+%\end{equation}
+%
+%\noindent where $\mathcal{A}$ is a linear operator, $\|\cdot\|_2$ is the $\ell_2$ norm, and $\|\cdot\|_1$ is the $\ell_1$ norm.  Loosely speaking, we pose this problem to attempt to find an $x$ such that $\mathcal{A}x$ is close to $b$, but also such that $x$ is sparse.  This problem usually comes up when we try to discover an unknown signal $x$ from an observed signal $b$, subject to some structural information about the unknown signal $x$ (sparsity, in this case).\\
+%
+%\noindent Let $g(x) = \frac{1}{2}\|\mathcal{A}x-b\|_2^2$ and $h(x)=\lambda \|x\|_1$.  Notice that $g(x)$ is convex and differentiable, and $h(x)$ is convex but non-differentiable.  The scalarization parameter $\lambda$ controls the relative importance of the approximation error $g(x)$ and the sparsity heuristic $\|x\|_1$.  Loosely speaking, larger $\lambda$ should yield a sparser solution.\\
+%
+%Even though $h(x)$ is non-differentiable, there exist many efficient algorithms for solving the above problem and its variants \cite{beck_2009b}.  Popular methods include the proximal gradient method and its variants, which include iterative shrinkage thresholding and projected gradient.  Crucial to the speed of these methods is an efficient proximal mapping (prox-operator) for the non-differentiable term $h(x)$.  The proximal mapping is defined as
+%
+%\[ \opn{prox}_h(x) = \opn{argmin}_{y} \left(h(y) + \dfrac{1}{2}\|y-x\|_2^2\right). \] 
+%
+%\noindent The proximal mapping can be thought of as finding the point minimizing $h(y)$ plus a simple quadratic model about the point $x$.  For $h(y) = \|y\|_1$, the proximal mapping is the shrinkage (``soft-threshold'') operator and takes the following particularly simple form:
+%
+%\[ \opn{prox}_h(x) = \left\{\begin{array}{ll} x_i - 1 & x_i \ge 1\\ 0 & |x_i| < 1\\ x_i + 1 & x_i \le 1.\end{array}\right. \]
+%
+%\noindent The main step of a simple proximal gradient method is
+%
+%\[ x^{(k)} = \opn{prox}_{t_k h}\left(x^{(k-1)} - t_k \nabla g(x^{(k-1)})\right), \] 
+%
+%\noindent with step size $t_k>0$.  The reader may note that this update resembles the simple gradient descent update for minimizing $g(x)$, with the exception of the proximal mapping which handles the non-differentiable term $h(x)$.  It is clear that an efficient proximal mapping is desired, as the proximal mapping must be evaluated at each step of the simple proximal gradient method.\\
+%
+%The gradient of the differentiable term $g(x)$ is found to be
+%
+%\[ \nabla g(x) = \mathcal{A}^\ast(\mathcal{A}x-b). \] 
+%
+%\noindent It is during the evaluation of the gradient $\nabla g(x)$ that we need efficient means of computing the action of $\mathcal{A}$ and its adjoint $\mathcal{A}^\ast$.  As we will see in the next sections, the operator $\mathcal{A}$ tends to have a well known, efficient forward and (pseudo)inverse transform (e.g. discrete cosine transform, discrete wavelet transform).  For unitary and orthogonal operators, the adjoint is identically the inverse.  For non-unitary and non-orthogonal operators, however, applying the adjoint efficiently may pose a problem.  The following examples show cases where a fast adjoint operation is possible.
+%
+%% ]]]
 
 
 \section{Example 1: An Image Deblurring Problem}
 % [[[
-Digital images can be blurred through a variety of means.  For example, the optical system can be out of focus and atmospheric turbulence can cause blurring of astronomical images.  The goal of image deblurring is to recover the original, sharp image by posing the blurring process in a mathematical model.\\
+Digital images can be blurred through a variety of means.  For example, the optical system can be out of focus and/or atmospheric turbulence can cause blurring of astronomical images.  The goal of image deblurring is to recover the original, sharp image by posing the blurring process in a mathematical model.\\
 
 In this example, we use the formulation used in \cite{beck_2009}.  It is assumed that the blurring action is known, and the deblurring problem is posed as an optimization problem, where the optimization variables are the wavelet coefficients of the recovered image.  Let $\mathcal{R}$ be a known blurring operator.  For instance, $\mathcal{R}$ could represent a Gaussian point spread function (PSF) under symmetric (reflexive) boundary conditions \cite{hansen_2006}.  Again, this model assumes that we have a good model of the blurring operator.\\
 
-Let $\mathcal{W}$ represent a multi-level wavelet synthesis operator with suitable boundary conditions.  Let $b$ be the observed, blurry image.  Let $\mathcal{A}=\mathcal{RW}$ be the linear operator that synthesizes an image from wavelet coefficients $x$ and then blurs the synthesized image under the blurring operator $\mathcal{R}$.  The image deblurring task is now readily posed as the optimization problem (\ref{eq:model_problem}), where we seek to recover sparse wavelet coefficients that accurately reconstruct the blurred image:
+Let $\mathcal{W}$ represent a multi-level wavelet synthesis operator with suitable boundary conditions.  Let $b$ be the observed, blurry image.  Let $\mathcal{A}=\mathcal{RW}$ be the linear operator that synthesizes an image from wavelet coefficients $x$ and then blurs the synthesized image under the blurring operator $\mathcal{R}$.  The image deblurring task is now readily posed as an optimization problem where we seek to recover sparse wavelet coefficients that accurately reconstruct the blurred image:
 
 \begin{equation}
 \label{eq:syn_problem}
 \min_x~ \dfrac{1}{2}\|\mathcal{RW}x-b\|_2^2 + \lambda \|x\|_1,
 \end{equation}
 
-\noindent From the sparse wavelet coefficients in an optimal solution $\hat{x}$, we can synthesize the deblurred image via $\mathcal{W}\hat{x}$.  This formulation is sometimes called the \emph{synthesis} formulation, since we synthesize an image from the wavelet coefficients in the optimization variable $x$.\\
+\noindent This formulation is sometimes called the \emph{synthesis} formulation, since we synthesize an image $\mathcal{W}x$ from the wavelet coefficients in the optimization variable $x$.  We seek to find an $x$ that accurately reconstructs the blurred image $b$ while simultaneously has only a few nonzero entires.\\
 
-The gradient of the differentiable term ${g(x)=\frac{1}{2}\|\mathcal{RW}x-b\|_2^2}$ is
+The gradient of the differentiable term $g(x)={\frac{1}{2}\|\mathcal{RW}x-b\|_2^2}$ is
 
 \[ \nabla g(x) = \mathcal{W}^\ast \mathcal{R}^\ast(\mathcal{RW}x-b). \] 
 
@@ -122,13 +121,23 @@ The gradient of the differentiable term ${g(x)=\frac{1}{2}\|\mathcal{RW}x-b\|_2^
 
 %     Could cite personal communication with Gabriel Peyre.
 
+Note that adjoints can appear in many other contexts.  The problem
+
+\[ \min_x~ \ell(\mathcal{A}x,b), \] 
+
+\noindent where $\ell$ is a loss function with a differentiable component still requires the adjoint of $\mathcal{A}$.  For instance,
+
+\[ \min_x~ g(\mathcal{A}x,b) + h(x), \] 
+
+\noindent where $g(\mathcal{A}x,b)$ is convex and differentiable in $x$ and $h(x)$ is convex and nondifferentiable, is a rich model that is considered in \cite{beck_2009b}.  The image deblurring problem falls into this class of problems.  Adjoints may appear when the loss function $\ell(\mathcal{A}x,b)$ contains hinge or logistic losses, for example.\\
+% TODO I basically name-dropped hinge and logistic loss.  This doesn't add to the discussion.
 
 \subsection{The adjoint for orthogonal wavelets}
-There is hope, however!  For orthogonal wavelets (e.g. Haar and more generally Daubechies wavelets), the pseudoinverse $\mathcal{W}^\dagger$ is exactly the adjoint $\mathcal{W}^\ast$, subject to appropriate (orthogonal) boundary conditions.  One can compute the gradient as
+For orthogonal wavelets (e.g. Haar and more generally Daubechies wavelets), the pseudoinverse $\mathcal{W}^\dagger$ is exactly the adjoint $\mathcal{W}^\ast$, subject to appropriate (orthogonal) boundary conditions.  One can compute the gradient as
 
 \[ \nabla g(x) = \mathcal{W}^\dagger \mathcal{R}^\ast \left(\mathcal{RW}x-b\right). \] 
 
-\noindent Beck and Teboulle did exactly this with a three-stage discrete Haar wavelet transform \cite{beck_2009}.  For an example image, consider the cameraman image, shown in Figure \ref{fig:cameraman_original}.  We prescribe symmetric boundary conditions on the image, which will affect both $\mathcal{W}$, $\mathcal{R}$, and their adjoints.  Symmetric boundary conditions (compared to periodic or zero-padded boundary conditions) produce significantly less edge effects, and so are a natural choice.  Luckily, for orthogonal wavelets, the adjoint of $\mathcal{W}$ with symmetric boundary conditions is ``very close to'' the inverse $\mathcal{W}^\dagger=\mathcal{W}^{-1}$ with symmetric boundary conditions, so one can use existing wavelet libraries without much hassle, e.g. \cite{matlab_wt_2015}.  As we will see later, the wavelets give an orthonormal basis, but the boundary conditions are not orthogonal and this leads to errors in $\mathcal{W}^\ast\approx\mathcal{W}^\dagger$.  Therefore, to handle the orthogonal case completely correctly, we may use existing software fore wavelet reconstruction, but we must handle the symmetric boundary conditions separately.\\
+\noindent Beck and Teboulle did exactly this with a three-stage discrete Haar wavelet transform \cite{beck_2009}.  For an example image, consider a standard resolution test chart, shown in Figure \ref{fig:original}.  We prescribe symmetric boundary conditions on the image, which will affect both $\mathcal{W}$, $\mathcal{R}$, and their adjoints.  Symmetric boundary conditions (compared to periodic or zero-padded boundary conditions) produce significantly fewer edge effects, and so are a natural choice.  Luckily, for orthogonal wavelets, the adjoint of $\mathcal{W}$ with symmetric boundary conditions is ``very close to'' the inverse $\mathcal{W}^\dagger=\mathcal{W}^{-1}$ with symmetric boundary conditions, so one can use existing wavelet libraries without much hassle, e.g. \cite{matlab_wt_2015}.  As we will see later, the wavelets give an orthonormal basis, but the boundary conditions are not orthogonal and this leads to errors in $\mathcal{W}^\ast\approx\mathcal{W}^\dagger$.  Therefore, to handle the orthogonal case completely correctly, we may use existing software fore wavelet reconstruction, but we must handle the symmetric boundary conditions separately.\\
 
 %     do existing wavelet libraries actually do the extension pinv adjoint correctly?
 %     No, but the extension operator is "close" to the extension pinv adjoint, so it's approx correct.
@@ -136,41 +145,61 @@ There is hope, however!  For orthogonal wavelets (e.g. Haar and more generally D
 
 \begin{figure}
    \centering
-   \includegraphics[width=0.8\columnwidth]{figures/cameraman.pdf}
-   \caption{The original, unblurred cameraman image.  To create the blurred image, the $\mathcal{R}$ is applied to the original image and Gaussian noise is added.}
-   \label{fig:cameraman_original}
+   %\includegraphics[width=0.8\columnwidth]{figures/cameraman.pdf}
+   \includegraphics[width=0.8\columnwidth]{figures/resolution.png}
+   \caption{The original, unblurred image.  To create the blurred image $b$, the blurring operator $\mathcal{R}$ is applied to the original image and small amount of Gaussian noise is added.}
+   \label{fig:original}
 \end{figure}
 
-Figure \ref{fig:cameraman_200_db1_sym} shows the deblurred image after 200 iterations of FISTA, a fast proximal gradient method, developed by Beck and Teboulle \cite{beck_2009}.  The wavelet synthesis operator $\mathcal{W}$ is taken to be a three-stage Haar discrete wavelet transform with symmetric boundary conditions.  For the figure we use ${\mathcal{W}^\ast \approx\mathcal{W}^\dagger}$.  Using this approximation, the image reconstruction relative error (vs. unblurred image) is $7.20\times10^{-2}$ and $72.99\%$ of the coefficients are nonzero.  Jumping ahead a bit, if we handle the boundary conditions properly (see the following subsection), then the reconstruction relative error is $7.21\times10^{-2}$ and $72.89\%$ of the coefficients are nonzero.  In this case the approximation works extremely well!\\
+Figure \ref{fig:compare_db1_sym} shows the deblurred image after 2500 iterations of FISTA, a fast proximal gradient method, developed by Beck and Teboulle \cite{beck_2009}.  The wavelet synthesis operator $\mathcal{W}$ is taken to be a three-stage Haar discrete wavelet transform with symmetric boundary conditions.  We set $\lambda=2\times 10^{-5}$.  We use both the true adjoint $\mathcal{W}^\ast$ and the approximation $\mathcal{W}^\dagger$.  Using the true adjoint, the image reconstruction relative error (vs. the unblurred image) is $8.91\times10^-4$ and $31.8\%$ of the coefficients are nonzero.  Using the pseudoinverse approximation, the relative error is $8.91\times 10^-4$ and $32.1\%$ of the coefficients are nonzero.  In this case the pseudoinverse approximation works extremely well.
+
+%For the figure we use ${\mathcal{W}^\ast \approx\mathcal{W}^\dagger}$.  Using this approximation, the image reconstruction relative error (vs. unblurred image) is $7.20\times10^{-2}$ and $72.99\%$ of the coefficients are nonzero.  Jumping ahead a bit, if we handle the boundary conditions properly (see the following subsection), then the reconstruction relative error is $7.21\times10^{-2}$ and $72.89\%$ of the coefficients are nonzero.  In this case the approximation works extremely well.\\
 
 \begin{figure}
    \centering
-   \includegraphics[width=0.8\columnwidth]{figures/cameraman_rec_200_db1_sym_trim.pdf}
-   \caption{Deblurred image after 200 iterations of FISTA with $\mathcal{W}$ a three-stage Haar transform with symmetric boundary conditions.  We use the (very good) approximation $\mathcal{W}^\ast\approx\mathcal{W}^\dagger$.}
-   \label{fig:cameraman_200_db1_sym}
+   %\includegraphics[width=0.8\columnwidth]{figures/cameraman_rec_200_db1_sym_trim.pdf}
+   \includegraphics[width=0.8\columnwidth]{figures/compare_db1_sym_2500.png}
+   \caption{Deblurred image after 2500 iterations of FISTA with $\mathcal{W}$ a three-stage Haar transform with symmetric boundary conditions.  The left half of the figure shows the deblurred image using the proper adjoint $\mathcal{W}^\ast$.  The top-right shows a zoomed-in view using $\mathcal{W}^\ast$; the bottom-right shows the same zoomed-in view using $\mathcal{W}^\dagger$ and 2500 iterations of FISTA.}
+   \label{fig:compare_db1_sym}
 \end{figure}
 
 
 \subsection{The adjoint for biorthogonal wavelets}
-For biorthogonal wavelets, we no longer have $\mathcal{W}^\ast=\mathcal{W}^\dagger$.  Since we have relaxed ourselves to biorthogonal wavelets, it is perhaps too much to ask that the adjoint of the primal wavelet synthesis operator involves only the primal wavelets.  Let us recall briefly the pertinent aspects of frames of Hilbert spaces.  These facts are described in more detail in \cite{mallat_2009}.\\
+For biorthogonal wavelets, we no longer have $\mathcal{W}^\ast=\mathcal{W}^\dagger$.  Since we have relaxed ourselves to biorthogonal wavelets (which handle symmetric boundary conditions nicely), it is perhaps too much to ask that the adjoint of the primal wavelet synthesis operator involves only the primal wavelets.  Let us recall briefly the pertinent aspects of frames of $\reals^d$.  These facts are described in more detail and generality in \cite{mallat_2009}; we restrict ourselves to the finite dimensional case for clarity, but the reader should note that the results generalize immediately.\\
 
-Let $\mathcal{H}$ be a Hilbert space and take $f\in\mathcal{H}$ to be an arbitrary vector in the Hilbert space.  Let $\{\phi_n\}_{n\in\Gamma}$, where $\Gamma$ is an index set, be a set of vectors in $\mathcal{H}$.  The set of vectors $\{\phi_n\}_{n\in\Gamma}$ is called a frame of $\mathcal{H}$ if there exists constants $B\ge A > 0$ such that
+Let $f\in\reals^d$ be an arbitrary vector.  Let $\{\phi_n\}_{n=1}^p$, $p\ge d$, be a set of vectors in $\reals^d$.  The set of vectors $\{\phi_n\}_{n=1}^p$ is called a frame of $\reals^d$ if there exists a constant $A>0$ such that
 
-\[ \forall f\in \mathcal{H}, \quad A\|f\|^2 \le \sum_{n\in\Gamma} |\langle f,\phi_n\rangle|^2\le B \|f\|^2. \] 
+\[ \forall f\in\reals^d, \quad A\|f\|^2 \le \|\Phi f\|, \] 
 
-\noindent If the set $\{\phi_n\}_{n\in\Gamma}$ is a frame and is linearly independent, we call it a Riesz basis.\\
+\noindent where $\Phi$ is the frame analysis operator defined as the matrix
 
-We assume henceforth that the set $\{\phi_n\}_{n\in\Gamma}$ is a frame of $\mathcal{H}$ with bounds $B\ge A > 0$.  We can define the frame analysis operator $\Phi$ via
+\[ \Phi = \begin{bmatrix}\phi_1^T\\\vdots\\\phi_p^T\end{bmatrix}. \] 
 
-\[ \forall n\in \Gamma,\quad \Phi f[n] = \langle f,\phi_n\rangle. \] 
+   \noindent The frame analysis operator computes the expansion coefficients of $f$ in the frame $\{\phi_n\}$.  The frame synthesis operator $\Phi^\ast$ constructs a vector in $\reals^d$ given some expansion coefficients.  Since $\{\phi_n\}$ is assumed to be a frame, $\Phi^\ast\Phi$ is invertible and we may define the Moore-Penrose pseudoinverse $\Phi^\dagger$, which implements reconstruction in the frame as $\Phi^\dagger=\left(\Phi^\ast\Phi\right)^{-1}\Phi$.\\
 
-\noindent The frame analysis operator computes the expansion coefficients of $f$ in the frame $\{\phi_n\}_{n\in\Gamma}$.  The frame synthesis operator is $\Phi^\ast$, and constructs a vector in $\mathcal{H}$ given expansion coefficients.  Since $\{\phi_n\}_{n\in\Gamma}$ is assumed to be a frame, $\Phi^\ast\Phi$ is invertible, and we may define the Moore-Penrose pseudoinverse $\Phi^\dagger$, which implements reconstruction, as $\Phi^\dagger = \left(\Phi^\ast\Phi\right)^{-1}\Phi$.\\
+   A dual frame can be associated with a (primal) frame by defining the dual frame vectors $\tilde{\phi}_n = \left(\Phi^\ast\Phi\right)^{-1}\phi_n$ for $n=1,...,p$.  We may define analogously the dual frame analysis operator $\tilde{\Phi}$ and dual frame synthesis operator $\tilde{\Phi}^\ast$.\\
 
-Reconstruction with the pseudoinverse of the frame operator can be thought of as synthesis with a dual frame.  The dual frame analysis operator and dual frame vectors are defined via
+% [[[ The old, general Hilbert space discussion
+%Let $\mathcal{H}$ be a Hilbert space and take $f\in\mathcal{H}$ to be an arbitrary vector in the Hilbert space.  Let $\{\phi_n\}_{n\in\Gamma}$, where $\Gamma$ is an index set, be a set of vectors in $\mathcal{H}$.  The set of vectors $\{\phi_n\}_{n\in\Gamma}$ is called a frame of $\mathcal{H}$ if there exists constants $B\ge A > 0$ such that
+%
+%\[ \forall f\in \mathcal{H}, \quad A\|f\|^2 \le \sum_{n\in\Gamma} |\langle f,\phi_n\rangle|^2\le B \|f\|^2. \] 
+%
+%\noindent If the set $\{\phi_n\}_{n\in\Gamma}$ is a frame and is linearly independent, we call it a Riesz basis.\\
+%
+%We assume henceforth that the set $\{\phi_n\}_{n\in\Gamma}$ is a frame of $\mathcal{H}$ with bounds $B\ge A > 0$.  We can define the frame analysis operator $\Phi$ via
+%
+%\[ \forall n\in \Gamma,\quad \Phi f[n] = \langle f,\phi_n\rangle. \] 
+%
+%\noindent The frame analysis operator computes the expansion coefficients of $f$ in the frame $\{\phi_n\}_{n\in\Gamma}$.  The frame synthesis operator is $\Phi^\ast$, and constructs a vector in $\mathcal{H}$ given expansion coefficients.  Since $\{\phi_n\}_{n\in\Gamma}$ is assumed to be a frame, $\Phi^\ast\Phi$ is invertible, and we may define the Moore-Penrose pseudoinverse $\Phi^\dagger$, which implements reconstruction, as $\Phi^\dagger = \left(\Phi^\ast\Phi\right)^{-1}\Phi$.\\
+%
+%Reconstruction with the pseudoinverse of the frame operator can be thought of as synthesis with a dual frame.  The dual frame analysis operator and dual frame vectors are defined via
+%
+%\[ \forall n\in \Gamma, \quad \tilde{\Phi}f[n] = \langle f,\tilde{\phi}_n\rangle, \quad \text{where } \tilde{\phi}_n = \left(\Phi^\ast\Phi\right)^{-1}\phi_n. \] 
+% ]]]
 
-\[ \forall n\in \Gamma, \quad \tilde{\Phi}f[n] = \langle f,\tilde{\phi}_n\rangle, \quad \text{where } \tilde{\phi}_n = \left(\Phi^\ast\Phi\right)^{-1}\phi_n. \] 
-
-\noindent Then the dual frame synthesis operator satisfied $\tilde{\Phi}^\ast = \Phi^\dagger$.  Notice that we also have $\Phi^\ast = \tilde{\Phi}^\dagger$; this relation provides the basic idea for computing the adjoint of the discrete wavelet synthesis operator $\mathcal{W}$.  Ignoring boundary effects and selecting the biorthogonal wavelets so that $\Phi^\dagger=\mathcal{W}$, we have the following:
+   \noindent A fundamental relationship between the primal and dual frames is $\tilde{\Phi}^\ast = \Phi^\dagger$.  Notice that we also have $\Phi^\ast = \tilde{\Phi}^\dagger$; this relation provides the basic idea for computing the adjoint of the discrete wavelet synthesis operator $\mathcal{W}$.  For biorthogonal wavelets, the exist fast transforms for both the primal and dual wavelets, which allows us to efficiently compute the adjoint.  Wavelet software typically compute wavelet analysis and reconstruction, and we now have a way to compute adjoints via functions in wavelet libraries.\\
+   
+   Ignoring boundary effects and recalling that we defined the deblurring problem in terms of the wavelet synthesis operator $\mathcal{W}=\Phi^\dagger$, we have the following:
 
 \begin{align*}
    \mathcal{W}^\ast &= \left(\Phi^\dagger\right)^\ast = \left(\left(\Phi^\ast\Phi\right)^{-1}\Phi^\ast\right)^\ast = \Phi\left(\Phi^\ast\Phi\right)^{-1}\\ 
@@ -178,7 +207,7 @@ Reconstruction with the pseudoinverse of the frame operator can be thought of as
                     &= \tilde{\Phi},
 \end{align*}
 
-\noindent where we have used various well-known properties of the pseudoinverse.  Thus, ignoring boundary conditions, the adjoint of wavelet synthesis is dual wavelet analysis!  Note that in the case of orthogonal wavelets, $\Phi^\ast\Phi$ is the identity, the dual frame is identically the primal frame, and ${\mathcal{W}^\ast = \tilde{\Phi}=\Phi=\mathcal{W}^\dagger}$, exactly as before.\\
+\noindent where we have used various well-known properties of the pseudoinverse.  Thus, ignoring boundary conditions, the adjoint of wavelet synthesis is dual wavelet analysis.  Note that in the case of orthogonal wavelets, $\Phi^\ast\Phi$ is the identity, the dual frame is identically the primal frame, and ${\mathcal{W}^\ast = \tilde{\Phi}=\Phi=\mathcal{W}^\dagger}$, exactly as before.\\
 
 It now remains to include boundary conditions.  A standard method for imposing boundary conditions on finite, discrete signals is to extend the signal to match those boundary conditions and perform the wavelet operations on the extended signal, assuming zero boundary conditions for the extended signal; this is the approach used in {\sc matlab}'s Wavelet Toolbox \cite{matlab_wt_2015}.  If we let $\mathcal{E}$ be the extension operator and $\mathcal{W}^\dagger_\text{zpd}$ be the wavelet analysis operator for extended signals under zero boundary conditions, we can write wavelet analysis as 
 
@@ -188,14 +217,16 @@ It now remains to include boundary conditions.  A standard method for imposing b
 
 \[ \mathcal{W} = \mathcal{E}^\dagger\mathcal{W}_\text{zpd}, \quad \mathcal{W}^\ast = \mathcal{W}^\ast_\text{zpd}(\mathcal{E}^\dagger)^\ast. \] 
 
-\noindent As shown in the next paragraph, this separation works because the zero-padded extension is orthogonal.\\
+\noindent As shown in the next subsection, this separation works because the zero-padded extension is orthogonal.\\
 
-Consider a signal $y[n]$, $n=0,...,N-1$.  Let $L_p$ be the length of the wavelet analysis filters (one can zero-padd a shorter filter to length $L_p$).  The double sided zero-padded extension of $y[n]$ puts $L_p-1$ zeros on each end of the signal:
+\subsection{A few signal extensions}
+Consider a $1$-dimensional signal $y[n]$, $n=0,...,N-1$.  \footnote{We consider only $1$d signals here for brevity.  The results can be extended to 2d quite naturally.}  Let $L_p$ be the length of the wavelet analysis filters (one can zero-pad a shorter filter to length $L_p$).  The double sided zero-padded extension of $y[n]$ puts $L_p-1$ zeros on each end of the signal:
 \[ \underbrace{0, ..., 0}_{L_p-1}, y[0], ..., y[N-1], \underbrace{0, ..., 0}_{L_p-1}. \]
 
 \noindent We can write down the linear operator $\mathcal{E}_\text{zpd}$ as a matrix that performs this operation on $y[n]$.
 
-\[ \mathcal{E}_\text{zpd} = \begin{bmatrix} 0_{(L_p-1)\times N}\\ I_{N\times N}\\ 0_{(L_p-1)\times N}\end{bmatrix} = \begin{bmatrix} 0 & 0 & \cdots & 0 & 0\\ \vdots & \vdots &\ddots & \vdots & \vdots\\ 0 & 0 & \cdots & 0 & 0\\[0.5em] 1 & 0 & \cdots & 0 & 0\\ 0 & 1 & \cdots & 0 & 0\\ \vdots & \vdots & \ddots & \vdots & \vdots\\ 0 & 0 & \cdots & 1 & 0\\ 0 & 0 & \cdots & 0 & 1\\[0.5em] 0 & 0 & \cdots & 0 & 0\\ \vdots & \vdots & \ddots & \vdots & \vdots\\ 0 & 0 & \cdots & 0 & 0\end{bmatrix}. \] 
+%\[ \mathcal{E}_\text{zpd} = \begin{bmatrix} 0_{(L_p-1)\times N}\\ I_{N\times N}\\ 0_{(L_p-1)\times N}\end{bmatrix} = \begin{bmatrix} 0 & 0 & \cdots & 0 & 0\\ \vdots & \vdots &\ddots & \vdots & \vdots\\ 0 & 0 & \cdots & 0 & 0\\[0.5em] 1 & 0 & \cdots & 0 & 0\\ 0 & 1 & \cdots & 0 & 0\\ \vdots & \vdots & \ddots & \vdots & \vdots\\ 0 & 0 & \cdots & 1 & 0\\ 0 & 0 & \cdots & 0 & 1\\[0.5em] 0 & 0 & \cdots & 0 & 0\\ \vdots & \vdots & \ddots & \vdots & \vdots\\ 0 & 0 & \cdots & 0 & 0\end{bmatrix}. \] 
+\[ \mathcal{E}_\text{zpd} = \begin{bmatrix} 0_{(L_p-1)\times N}\\ I_{N\times N}\\ 0_{(L_p-1)\times N}\end{bmatrix}. \] 
 
 \noindent Once we have this explicit form of $\mathcal{E}_\text{zpd}$, we can find the adjoint of its pseudoinverse.  In this case we have that $\left(\mathcal{E}_\text{zpd}^\dagger\right)^\ast = \mathcal{E}_\text{zpd}$.  Although the zero-padded extension is simple to work with, it is not usually a reasonable extension mode for practical applications.  A better extension mode is the half-point symmetric extension, which is the default extension mode in {\sc matlab}'s Wavelet Toolbox \cite{matlab_wt_2015}.\\
 
@@ -203,25 +234,50 @@ The double sided half-point symmetric extension reflects the signal about its bo
 
 \[ \underbrace{y[L_p-1], ..., y[0]}_\text{Left extension}, y[0], ..., y[N-1], \underbrace{y[N-1], ..., y[N+L_p-2]}_\text{Right extension}. \] 
 
-\noindent As in the zero-padded case, we can readily form a matrix that performs this operation on $y[n]$.
+\noindent As in the zero-padded case, we can readily form a matrix that performs this operation on $y[n]$.  Let $L'=L_p-1$ and $P$ be the appropriately sized permutation matrix that reverses the ordering of the columns.  Then
 
-\[ \mathcal{E}_\text{sym} = \begin{bmatrix} & & \iddots & & &\\ & 1 &&&&\\ 1&&&&&\\1&&&&\\&1&&&&\\&&\ddots&&&\\&&&1&\\&&&&1\\&&&&1\\&&&1&\\&&\iddots&&\end{bmatrix}. \]
+%\[ \mathcal{E}_\text{sym} = \begin{bmatrix} & & \iddots & & &\\ & 1 &&&&\\ 1&&&&&\\1&&&&\\&1&&&&\\&&\ddots&&&\\&&&1&\\&&&&1\\&&&&1\\&&&1&\\&&\iddots&&\end{bmatrix}. \]
+\[ \scalemath{0.8}{\mathcal{E}_\text{sym} = \begin{bmatrix} & & \iddots & & &\\ & 1 &&&&\\ 1&&&&&\\1&&&&\\&1&&&&\\&&\ddots&&&\\&&&1&\\&&&&1\\&&&&1\\&&&1&\\&&\iddots&&\end{bmatrix} = \begin{bmatrix}I_{L'\times L'}P & 0 & 0\\I_{L'\times L'} & 0 & 0\\0 & I_{N-2L'\times N-2L'} & 0\\0&0&I_{L'\times L'}\\0&0&I_{L'\times L'}P\end{bmatrix}.} \]
 
-\noindent The adjoint of the pseudoinverse can be computed in closed form and essentially amounts to rescaling the nonzero entries of $\mathcal{E}_\text{sym}$.  Assuming $N > 2(L_p-1)$, which usually occurs in practice, the adjoint of the  pseudoinverse of $\mathcal{E}_\text{sym}$ is 
+\noindent The adjoint of the pseudoinverse can be computed in closed form and essentially amounts to rescaling the nonzero entries of $\mathcal{E}_\text{sym}$.  Assuming $N > 2(L_p-1)=2L'$, which usually occurs in practice, the adjoint of the  pseudoinverse of $\mathcal{E}_\text{sym}$ is 
 
-\[ \left(\mathcal{E}_\text{sym}^\dagger\right)^\ast = \begin{bmatrix} & \iddots \\ 1/2&&&&&\\1/2&&&&\\&\ddots&&&&&&\\&&1/2&\\&&&1\\&&&&\ddots\\&&&&&1\\&&&&&&1/2\\&&&&&&&\ddots\\&&&&&&&&1/2\\&&&&&&&&1/2\\&&&&&&&\iddots\\\end{bmatrix}. \]
+%\[ \left(\mathcal{E}_\text{sym}^\dagger\right)^\ast = \begin{bmatrix} & \iddots \\ 1/2&&&&&\\1/2&&&&\\&\ddots&&&&&&\\&&1/2&\\&&&1\\&&&&\ddots\\&&&&&1\\&&&&&&1/2\\&&&&&&&\ddots\\&&&&&&&&1/2\\&&&&&&&&1/2\\&&&&&&&\iddots\\\end{bmatrix}. \]
+\[ \left(\mathcal{E}_\text{sym}^\dagger\right)^\ast = \begin{bmatrix}\frac{1}{2}I_{L'\times L'}P & 0 & 0\\\frac{1}{2}I_{L'\times L'} & 0 & 0\\0 & I_{N-2L'\times N-2L'} & 0\\0&0&\frac{1}{2}I_{L'\times L'}\\0&0&\frac{1}{2}I_{L'\times L'}P\end{bmatrix}. \]
 
-\noindent If $N \le 2(L_p-1)$, the form of the pseudoinverse is slightly different, with some of the $1/2$ terms becoming $1/3$; both cases are considered in our implementation.\\
+\noindent If ${N \le 2(L_p-1)=2L'}$, the form of the pseudoinverse is slightly different, with some of the $1/2$ terms becoming $1/3$.\\%TODO clean up code and put online? both cases are considered in our implementation.\\
 
+Similarly, the periodic extension operator is
+
+\[ \mathcal{E}_\text{per} = \begin{bmatrix} 0 & 0 & I_{L'\times L'}\\&I_{N\times N}&\\I_{L'\times L'}&0&0\end{bmatrix} \] 
+
+\noindent and the adjoint of its pseudoinverse is
+
+\[ \left(\mathcal{E}_\text{per}^\dagger\right)^\ast = \begin{bmatrix} 0 & 0 & \frac{1}{2}I_{L'\times L'}\\\frac{1}{2}I_{L'\times L'}&0&0\\0&I_{N-2L'\times N-2L'}&0\\0&0&\frac{1}{2}I_{L'\times L'}\\\frac{1}{2}I_{L'\times L'}&0&0\end{bmatrix}. \] 
+
+\noindent Again, in the unusual case that $N\le 2(L_p-1)=2L'$, the form of the pseudoinverse changes slightly.\\
 
 \begin{figure}
    \centering
-   \includegraphics[width=0.8\columnwidth]{{figures/cameraman_rec_200_bior4.4_sym_trim}.pdf}
-   \caption{Deblurred image after 200 iterations of FISTA with $\mathcal{W}$ a three-stage CDF 9/7 transform with symmetric boundary conditions.  Here we use the true adjoint $\mathcal{W}^\ast$ computed via $\mathcal{W}^\ast=\mathcal{W}^\ast_\text{zpd}(\mathcal{E}^\dagger)^\ast$.}
-   \label{fig:cameraman_200_bior4.4_sym}
+   %\includegraphics[width=0.8\columnwidth]{{figures/cameraman_rec_200_bior4.4_sym_trim}.pdf}
+   \includegraphics[width=0.8\columnwidth]{{figures/compare_bior4.4_sym_2500}.png}
+   \caption{Deblurred image after 2500 iterations of FISTA with $\mathcal{W}$ a three-stage CDF 9/7 transform with symmetric boundary conditions.  Again the left and top-right sections use $\mathcal{W}^\ast$ and the bottom-right section uses $\mathcal{W}^\dagger$.}
+   \label{fig:compare_bior4.4_sym}
 \end{figure}
 
-Figure \ref{fig:cameraman_200_bior4.4_sym} shows the deblurred cameraman image after 200 iterations of FISTA using a three-stage CDF 9/7 transform with symmetric boundary conditions.  For the figure, we handle the adjoint properly.  Using the approximation $\mathcal{W}^\ast\approx\mathcal{W}^\dagger$, the image reconstruction relative error is $7.25\times10^{-2}$ and $57.03\%$ of the coefficients are nonzero.  If we handle the adjoint properly, then the reconstruction relative error is $7.24\times10^{-2}$ and $57.67\%$ of the coefficients are nonzero.  In this case as well the approximation works extremely well!\\
+%TODO resolution.pgm?
+%TODO makes more sense to give blurred image reconstruction error, since that's in the objective.
+%TODO % sparsity doesn't make sense.  Give integer nnz values.
+Figure \ref{fig:compare_bior4.4_sym} shows the deblurred image after 2500 iterations of FISTA using a three-stage CDF 9/7 discrete wavelet transform with symmetric boundary conditions.  Using the true adjoint, the image reconstruction relative error (vs. the unblurred image) is $9.45e-04$ and $29.23\%$ of the coefficients are nonzero.  Using the pseudoinverse approximation, the relative error is $9.67\times 10^-4$ and $29.74\%$ of the coefficients are nonzero.  Here the pseudoinverse approximation works, but doesn't work quite as well as the true adjoint.\\
+
+\begin{figure}
+   \centering
+   %\includegraphics[width=0.8\columnwidth]{{figures/pinv_adjoint_fun_values_db1_sym_trim}.pdf}
+   \includegraphics[width=\columnwidth]{{figures/pinv_adjoint_fun_values_bior4.4_sym_trim}.pdf}
+   \caption{Convergence of FISTA for $\mathcal{W}$ a three-stage CDF 9/7 transform using either the true adjoint or the pseudoinverse approximation.  The objective value is normalized so the optimal value is $0$.}
+   \label{fig:adjoint_convergence}
+\end{figure}
+
+Figure \ref{fig:adjoint_convergence} shows the convergence of the objective values for the CDF 9/7 experiment using both the pseudoinverse approximation and true adjoint.  The approximation works very well for low accuracy, but fails when higher accuracy is needed.\\
 
 % ]]]
 
@@ -297,7 +353,7 @@ The gradients of the differentiable $\ell_2$ error term $g(h,s)=\|\mathcal{A}(hs
    \draw [thick,->,>=stealth,shorten >=-9mm,shorten <=-4mm,color=blue] (hs-4-4.center) to (hs-7-1.center);
    % ]]]
 \end{tikzpicture}
-\caption{How the channel output $x_i$ is formed via $\mathcal{A}(h_is^T)$.  Each entry of $x_i$ is the sum of an anti-diagonal of $h_is^T$.  Notice that all convolution terms appear in the outer product $h_is^T$, so $\mathcal{A}$ is indeed just a linear operator.  Adapted from \cite{romberg_2013}.}
+\caption{How the channel output $x_i$ is formed via $\mathcal{A}(h_is^T)$.  Each entry of $x_i$ is the sum of an anti-diagonal of $h_is^T$.  Notice that all convolution terms appear in the outer product $h_is^T$, so $\mathcal{A}$ is indeed just a linear operator on the matrix $h_is^T$.  Adapted from \cite{romberg_2013}.}
 \label{fig:action_of_A}
 \end{figure}
 
@@ -314,7 +370,7 @@ To find the adjoint, we must use the definition of the adjoint operator on Hilbe
 
 \[ \left\langle \mathcal{A}(X),y\right\rangle = \sum_{k=0}^{K+N-2}y[k] \left(\sum_{n=n_1(k)}^{n_2(k)} X[n,k-n]\right) \] 
 
-\noindent where we have defined the bounds $n_1(k) = {\max\{0,k+1-N\}}$ and $n_2(k) = {\min\{K-1,k\}}$.  If $X=h_is^T$, then the inner summation computes the $k$th term of the convolution $h_i\ast s$.  We can expand the first few terms of the vector inner product and keep track of the terms multiplying $y[k]$.
+\noindent where we have defined the bounds ${n_1(k) = {\max\{0,k+1-N\}}}$ and ${n_2(k) = {\min\{K-1,k\}}}$.  If $X=h_is^T$, then the inner summation computes the $k$th term of the convolution $h_i\ast s$.  We can expand the first few terms of the vector inner product and keep track of the terms multiplying $y[k]$.
 
 \begin{align*}
    \left\langle\mathcal{A}(X),y\right\rangle &= y[0]X[0,0] + y[1]\left(X[0,1]+X[1,0]\right)\\
@@ -325,7 +381,7 @@ To find the adjoint, we must use the definition of the adjoint operator on Hilbe
 
 \[ \left\langle\mathcal{A}(X),y\right\rangle = \sum_{k=0}^{K-1}\sum_{n=0}^{N-1} X[k,n]y[k+n] = \left\langle X,\mathcal{A}^\ast(y)\right\rangle. \] 
 
-\noindent Define the $K\times N$ Hankel matrix by $Y[k,n] = y[k+n]$, and then we have the adjoint $\mathcal{A}^\ast(y) = Y$!\\
+\noindent Define the $K\times N$ Hankel matrix by $Y[k,n] = y[k+n]$, and then we have the adjoint $\mathcal{A}^\ast(y) = Y$.\\
 
 It turns out that we can compute matrix-vector products with the Hankel matrix $Y$ rapidly, even though $Y$ is dense \cite{golub_1996}.  To illustrate the manner in which we can compute a fast Hankel matrix-vector product, consider the (unrealistic) case $K=3$ and $N=5$.  The Hankel matrix $Y$ is
 
@@ -375,13 +431,11 @@ To make all of this work for a Hankel matrix-vector product, say $w=Yz$, where $
 \noindent where $\mathcal{F}$ is the DFT of length $K+N-1$ (computed with an FFT) and $.*$ is the element-wise, or Hadamard, product.  Finally, the $K-1$ elements of $w$ are in the first $K-1$ entries of $Cz_a$.\\
 
 % TODO What example of this should we do?
-%      We can use Brendan's simulated data and just publish the data on github?  Get permission first!  This example is still a work in progress however!  Choice of parameters is important.
 %      \cite some of Brendan's papers?  as personal communication or whatever Brendan's preference is
 Now that we can compute the action of $\mathcal{A}^\ast(y)$, we can compute gradients and use existing first-order methods.  As an example, we consider a simulated underwater acoustic channel.  A single unknown real source signal is broadcast over two acoustic channels with unknown real impulse responses.  Additionally, zero mean Gaussian noise with standard deviation $0.005$ is added to each output signal.  We extend the blind channel estimation problem to two channels quite naturally:
 
 \begin{align*}
-   \min_{h_i,s} ~&\|\mathcal{A}(h_1s^T) - x_1\|_2^2 + \lambda_{h}\|h_1\|_1 + \lambda_s\|s\|_1\\
-                 &\|\mathcal{A}(h_2s^T) - x_2\|_2^2 + \lambda_{h}\|h_2\|_1.
+   \min_{h_i,s} ~&\sum_{i=1}^2\left(\left\|\mathcal{A}(h_is^T) - x_i\right\|_2^2 + \lambda_{h}\|h_i\|_1\right) + \lambda_s\|s\|_1
 \end{align*}
 
 \noindent Further, we may add a differentiable total-variation-like term.  The addition of a total-variation-like term may induce sharp transitions and stretches of nearly constant signal values (e.g. where the channel impulse response is zero for brief periods).  The true total-variation (TV) norm of $h$ may be computed as $\|\mathcal{D}h\|_1$, where $\mathcal{D}$ is the operator that subtracts consecutive pairs of elements of $h$: $\{\mathcal{D}h\}_j = h_{j+1} - h_j$.  We can in fact form $\mathcal{D}$ as a sparse matrix and compute $\mathcal{D}^\ast$ easily.  To ``soften'' the TV norm to a differentiable term, we may use the Huber function, defined as
@@ -390,10 +444,12 @@ Now that we can compute the action of $\mathcal{A}^\ast(y)$, we can compute grad
 
 \noindent The Huber function is commonly used in regression with outliers, as it is linear for $|z|>\delta$, and so it is less sensitive to outliers.  Unlike $\|\cdot\|_1$, the Huber function is differentiable for all $z$.  We can approximate the TV norm with ${\|h\|_\text{TV} \defeq\|\mathcal{D}h\|_1 \approx L_\delta(\mathcal{D}h)/\delta}$.  The augmented problem, with the differentiable total-variation-like term is
 
+%TODO how to typeset this?
 \begin{align}
    \label{eq:bce_aug}
-   \min_{h_i,s} ~&\|\mathcal{A}(h_1s^T)-x_1\|_2^2 + \lambda_{h,\text{TV}}L_\delta(\mathcal{D}h_1)/\delta + \lambda_{h}\|h_1\|_1+ \lambda_s\|s\|_1\nonumber\\
-                 &\|\mathcal{A}(h_2s^T)-x_2\|_2^2 + \lambda_{h,\text{TV}}L_\delta(\mathcal{D}h_2)/\delta + \lambda_{h}\|h_2\|_1.
+   \min_{h_i,s} ~&\sum_{i=1}^2\left(\left\|\mathcal{A}(h_is^T)-x_i\right\|_2^2 + \lambda_{h,\text{TV}}L_\delta(\mathcal{D}h_i)/\delta + \lambda_{h}\|h_i\|_1\right) + \lambda_s\|s\|_1
+   %\min_{h_i,s} ~&\|\mathcal{A}(h_1s^T)-x_1\|_2^2 + \lambda_{h,\text{TV}}L_\delta(\mathcal{D}h_1)/\delta + \lambda_{h}\|h_1\|_1+ \lambda_s\|s\|_1\nonumber\\
+   %              &\|\mathcal{A}(h_2s^T)-x_2\|_2^2 + \lambda_{h,\text{TV}}L_\delta(\mathcal{D}h_2)/\delta + \lambda_{h}\|h_2\|_1.
 \end{align}
 
 %TODO how to cite Brendan's data?
@@ -401,15 +457,14 @@ It is straightforward to include the ``soft'' TV term in the gradients, and we c
 
 We take $\lambda_h = 0.1$, $\lambda_s=0.01$, $\lambda_{h,\text{TV}}=0.01$, and $\delta=0.1$ for the Huber functions $L_\delta(\cdot)$.  We initialized $h_i$ and $s$ with zero mean Gaussian random numbers with unit standard deviation.  In practice, we may not know the true lengths of $h_i$ and $s$, $K$ and $N$, respectively.  We do know the length of the observed signals, which is $K+N-1$.  In this example, $K=894$ and $N=1717$, and we guess $K_\text{est}=794$ and $N_\text{est}=1817$.  We used Mark Schmidt's software package ``L1General'' to solve the augmented problem (\ref{eq:bce_aug}) \cite{schmidt_2010}.\\
 
-The results of the recovery are shown in Figure \ref{fig:bce_rec}.  We show the output and channel impulse response for only the first channel; the second channel is similar.  With the exception of minor variations, the estimated channel response is a time-shifted and rescaled version of the true channel response.  There appears to be a corresponding delay and scaling factor for the estimated source signal, which we do not expect to remove without side information.\\ 
-
+The results of the recovery are shown in Figure \ref{fig:bce_rec}.  We show the output and channel impulse response for only the first channel, as the second channel is similar.  Besides the overall magnitude ambiguity and time shift (which are inconsequential for acoustic channel estimation), peaks 7 and 8 have undergone a phase and time shift.  A careful observation of \texttt{x\_est} would lead us to revise our estimates of $K$ and $N$, which does lead to correctly estimating peaks 7 and 8.\\
 
 \begin{figure}
    \centering
    \includegraphics[width=0.5\textwidth]{figures/bce_rec_003_x_trim.pdf}
    \includegraphics[width=0.5\textwidth]{figures/bce_rec_003_h_trim.pdf}
    \includegraphics[width=0.5\textwidth]{figures/bce_rec_003_s_trim.pdf}
-   \caption{Blind channel estimation via equation (\ref{eq:bce_aug}) for underwater acoustic impulsive source.  Shown are the true and estimated first channel output, first channel impulse response, and source.  The estimated source signal and impulse responses appear remarkably similar to the true signals.  The major differences are a magnitude ambiguity and a time shift.}
+   \caption{Blind channel estimation via problem (\ref{eq:bce_aug}) for underwater acoustic impulsive source.  Shown are the true and estimated first channel output, first channel impulse response, and source.  The estimated source signal and impulse responses appear remarkably similar to the true signals.}
    \label{fig:bce_rec}
 \end{figure}
 
@@ -419,7 +474,7 @@ The results of the recovery are shown in Figure \ref{fig:bce_rec}.  We show the 
 % [[[
 We have demonstrated a framework for computing the adjoint of discrete wavelet transforms, which arise in gradient computations in optimization problems.  The framework separates the action of the wavelet transform and the signal extension operator.  The half-point symmetric extension is a common choice and we have provided its transpose, but other extension operators can readily be cast into the framework.  For many practical purposes, however, it appears that the adjoint operator is remarkably close to the pseudoinverse transform, which requires almost zero extra work for the programmer.\\
 
-Another interesting operator and its adjoint appear in a blind channel estimation optimization problem.  A few interesting linear algebraic tricks are used to arrive at a fast implementation of the adjoint operator.  For an impulsive source sent through a simulated underwater acoustic channel, the optimization problem is able to recover a slightly modified version of the true signals.\\
+Another interesting operator and its adjoint appear in a blind channel estimation optimization problem.  A few linear algebraic tricks are used to arrive at a fast implementation of the adjoint operator.  For an impulsive source sent through a simulated underwater acoustic channel, the optimization problem is able to recover a slightly modified version of the true signals.\\
 
 % ]]]
 
