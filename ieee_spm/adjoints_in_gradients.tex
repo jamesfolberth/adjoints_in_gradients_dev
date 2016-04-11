@@ -146,8 +146,9 @@ For orthogonal wavelets (e.g. Haar and more generally Daubechies wavelets), the 
 \begin{figure}
    \centering
    %\includegraphics[width=0.8\columnwidth]{figures/cameraman.pdf}
-   \includegraphics[width=0.8\columnwidth]{figures/resolution.png}
-   \caption{The original, unblurred image.  To create the blurred image $b$, the blurring operator $\mathcal{R}$ is applied to the original image and small amount of Gaussian noise is added.}
+   %\includegraphics[width=0.8\columnwidth]{figures/resolution.png}
+   \includegraphics[width=0.8\columnwidth]{figures/resolution_blurred_figure.png}
+   \caption{The left half of the original, unblurred image and the left half of the blurred image.  To create the blurred image $b$, the blurring operator $\mathcal{R}$ is applied to the original image and small amount of Gaussian noise is added.}
    \label{fig:original}
 \end{figure}
 
@@ -302,7 +303,7 @@ For simplicity, let's assume we have a single channel $h$ with observed output $
 
 \[ \min_{h,s}~ \|\mathcal{A}(hs^T)-x\|_2^2 + \lambda_h\|h\|_1 + \lambda_s \|s\|_1, \] 
 
-\noindent where we include the terms $\lambda_h\|h\|_1$ and $\lambda_s\|s\|_1$ to promote sparsity in the recovered signals.  To promote other structure in the recovered signals (assuming it is present in the true signals), we can in principle include other terms, such as $\|h\|_{TV}$, the total-variation norm.  Note that since this problem involves quadratic terms in $hs^T$, it is a non-convex problem.\\
+\noindent where we include the terms $\lambda_h\|h\|_1$ and $\lambda_s\|s\|_1$ to promote sparsity in the recovered signals.  To promote other structure in the recovered signals (assuming it is present in the true signals), we can in principle include other terms, such as $\|h\|_{TV}$, the total-variation norm.  Note that since this problem involves $hs^T$, it involves products of the problem variables and so is a non-convex problem.\\
 
 The gradients of the differentiable $\ell_2$ error term $g(h,s)=\|\mathcal{A}(hs^T)-x\|_2^2$ are
 
@@ -359,14 +360,14 @@ The gradients of the differentiable $\ell_2$ error term $g(h,s)=\|\mathcal{A}(hs
 
 \noindent The operator $\mathcal{A}$ is a little bit strange in that it maps matrices to vectors, so its adjoint is not quite obvious (i.e. we cannot directly compute the conjugate transpose of $\mathcal{A}$), but we do know that the adjoint maps vectors to matrices.  This fact is apparent in $\nabla_sg$, where we must compute a matrix-vector product with the matrix transpose of $\mathcal{A}^\ast\left(\mathcal{A}(hs^T)-x\right)$.  Note that the matrix transpose of $\mathcal{A}^\ast(\cdot)$ is different than applying another adjoint to $\mathcal{A}^\ast$.\\
 
-To find the adjoint, we must use the definition of the adjoint operator on Hilbert spaces.  We consider an arbitrary matrix $X\in\reals^{K\times N}$ and vector $y\in\reals^{K+N-1}$.  The adjoint is defined via
+To find the adjoint, we must use the general definition of the adjoint operator.  We consider an arbitrary matrix $X\in\reals^{K\times N}$ and vector $y\in\reals^{K+N-1}$.  The adjoint is defined via
 
 \begin{equation}
    \label{eq:A_adjoint_def}
    \left\langle \mathcal{A}(X),y \right\rangle = \left\langle X, \mathcal{A}^\ast(y)\right\rangle \quad \forall X,y.
 \end{equation}
 
-\noindent Note that the inner product on the left-hand side of equation \ref{eq:A_adjoint_def} is the usual vector inner product on $\reals^{K+N-1}$, while the inner product on the right-hand side is the usual matrix inner product on $\reals^{K\times N}$.  We can explicitly write down $\mathcal{A}(X)$ and expand the vector inner product.
+\noindent Note that the inner product on the left-hand side of equation \ref{eq:A_adjoint_def} is the usual vector inner product on $\reals^{K+N-1}$, while the inner product on the right-hand side is the usual matrix inner product on $\reals^{K\times N}$.  We can explicitly write down $\mathcal{A}(X)$, which is just a linear convolution, and expand the vector inner product.
 
 \[ \left\langle \mathcal{A}(X),y\right\rangle = \sum_{k=0}^{K+N-2}y[k] \left(\sum_{n=n_1(k)}^{n_2(k)} X[n,k-n]\right) \] 
 
@@ -383,7 +384,7 @@ To find the adjoint, we must use the definition of the adjoint operator on Hilbe
 
 \noindent Define the $K\times N$ Hankel matrix by $Y[k,n] = y[k+n]$, and then we have the adjoint $\mathcal{A}^\ast(y) = Y$.\\
 
-It turns out that we can compute matrix-vector products with the Hankel matrix $Y$ rapidly, even though $Y$ is dense \cite{golub_1996}.  To illustrate the manner in which we can compute a fast Hankel matrix-vector product, consider the (unrealistic) case $K=3$ and $N=5$.  The Hankel matrix $Y$ is
+It turns out that we can compute matrix-vector products with the Hankel matrix $Y$ rapidly, even though $Y$ is dense \cite{golub_1996}.  To illustrate the manner in which we can compute a fast Hankel matrix-vector product, consider the case $K=3$ and $N=5$.  The Hankel matrix $Y$ is
 
    \[ Y = \begin{bmatrix} y[0] & y[1] & y[2] & y[3] & y[4]\\
                           y[1] & y[2] & y[3] & y[4] & y[5]\\
@@ -428,7 +429,7 @@ To make all of this work for a Hankel matrix-vector product, say $w=Yz$, where $
 
 \[ Cz_a = \mathcal{F}^{-1}\left[\left(\mathcal{F}c\right).*\left(\mathcal{F}z_a\right)\right], \] 
 
-\noindent where $\mathcal{F}$ is the DFT of length $K+N-1$ (computed with an FFT) and $.*$ is the element-wise, or Hadamard, product.  Finally, the $K-1$ elements of $w$ are in the first $K-1$ entries of $Cz_a$.\\
+\noindent where $\mathcal{F}$ is the DFT of length $K+N-1$ (computed with an FFT) and $.*$ is the element-wise (Hadamard) product.  Finally, the $K-1$ elements of $w$ are in the first $K-1$ entries of $Cz_a$.\\
 
 % TODO What example of this should we do?
 %      \cite some of Brendan's papers?  as personal communication or whatever Brendan's preference is
@@ -438,7 +439,7 @@ Now that we can compute the action of $\mathcal{A}^\ast(y)$, we can compute grad
    \min_{h_i,s} ~&\sum_{i=1}^2\left(\left\|\mathcal{A}(h_is^T) - x_i\right\|_2^2 + \lambda_{h}\|h_i\|_1\right) + \lambda_s\|s\|_1
 \end{align*}
 
-\noindent Further, we may add a differentiable total-variation-like term.  The addition of a total-variation-like term may induce sharp transitions and stretches of nearly constant signal values (e.g. where the channel impulse response is zero for brief periods).  The true total-variation (TV) norm of $h$ may be computed as $\|\mathcal{D}h\|_1$, where $\mathcal{D}$ is the operator that subtracts consecutive pairs of elements of $h$: $\{\mathcal{D}h\}_j = h_{j+1} - h_j$.  We can in fact form $\mathcal{D}$ as a sparse matrix and compute $\mathcal{D}^\ast$ easily.  To ``soften'' the TV norm to a differentiable term, we may use the Huber function, defined as
+\noindent Further, we may add a differentiable total-variation-like term.  The addition of a total-variation-like term may induce sharp transitions and stretches of nearly constant signal values (e.g. where the channel impulse response is constant for brief periods).  The true total-variation (TV) norm of $h$ may be computed as $\|\mathcal{D}h\|_1$, where $\mathcal{D}$ is the operator that subtracts consecutive pairs of elements of $h$: $\{\mathcal{D}h\}_j = h_{j+1} - h_j$.  We can in fact form $\mathcal{D}$ as a sparse matrix and compute $\mathcal{D}^\ast$ easily.  To ``soften'' the TV norm to a differentiable term, we may use the Huber function, defined as
 
 \[ L_\delta(z) = \left\{\begin{array}{ll} \frac{1}{2}z^2 & |z| \le \delta\\ \delta\left(|z| - \frac{1}{2}\delta\right) & |z| > \delta. \end{array}\right. \] 
 
@@ -447,7 +448,8 @@ Now that we can compute the action of $\mathcal{A}^\ast(y)$, we can compute grad
 %TODO how to typeset this?
 \begin{align}
    \label{eq:bce_aug}
-   \min_{h_i,s} ~&\sum_{i=1}^2\left(\left\|\mathcal{A}(h_is^T)-x_i\right\|_2^2 + \lambda_{h,\text{TV}}L_\delta(\mathcal{D}h_i)/\delta + \lambda_{h}\|h_i\|_1\right) + \lambda_s\|s\|_1
+   \min_{h_i,s} ~&\sum_{i=1}^2\biggl(\left\|\mathcal{A}(h_is^T)-x_i\right\|_2^2 + \lambda_{h,\text{TV}}L_\delta(\mathcal{D}h_i)/\delta\nonumber\\
+                 &+ \lambda_{h}\|h_i\|_1\biggr) + \lambda_s\|s\|_1
    %\min_{h_i,s} ~&\|\mathcal{A}(h_1s^T)-x_1\|_2^2 + \lambda_{h,\text{TV}}L_\delta(\mathcal{D}h_1)/\delta + \lambda_{h}\|h_1\|_1+ \lambda_s\|s\|_1\nonumber\\
    %              &\|\mathcal{A}(h_2s^T)-x_2\|_2^2 + \lambda_{h,\text{TV}}L_\delta(\mathcal{D}h_2)/\delta + \lambda_{h}\|h_2\|_1.
 \end{align}
@@ -455,10 +457,13 @@ Now that we can compute the action of $\mathcal{A}^\ast(y)$, we can compute grad
 %TODO how to cite Brendan's data?
 It is straightforward to include the ``soft'' TV term in the gradients, and we can use standard first-order algorithms to solve the augmented problem.  Brendan Rideout of the University of Hawai`i provided simulated data containing an impulsive source, two underwater acoustic channel impulse responses, and the two outputs of the underwater channels.  The simulation also added zero mean Gaussian noise with standard deviation $0.005$.  We used the two channel outputs to attempt to recover the impulsive source and channel impulse responses.\\
 
-We take $\lambda_h = 0.1$, $\lambda_s=0.01$, $\lambda_{h,\text{TV}}=0.01$, and $\delta=0.1$ for the Huber functions $L_\delta(\cdot)$.  We initialized $h_i$ and $s$ with zero mean Gaussian random numbers with unit standard deviation.  In practice, we may not know the true lengths of $h_i$ and $s$, $K$ and $N$, respectively.  We do know the length of the observed signals, which is $K+N-1$.  In this example, $K=894$ and $N=1717$, and we guess $K_\text{est}=794$ and $N_\text{est}=1817$.  We used Mark Schmidt's software package ``L1General'' to solve the augmented problem (\ref{eq:bce_aug}) \cite{schmidt_2010}.\\
+We take $\lambda_h = 0.1$, $\lambda_s=0.01$, $\lambda_{h,\text{TV}}=0.01$, and $\delta=0.1$ for the Huber functions $L_\delta(\cdot)$.  We initialized $h_i$ and $s$ with zero mean Gaussian random numbers with unit standard deviation.  In practice, we may not know the true lengths of $h_i$ and $s$, $K$ and $N$, respectively.  We do know the length of the observed signals, which is $K+N-1$.  In this example, $K=894$ and $N=1717$, and we guess $K_\text{est}=794$ and $N_\text{est}=1817$.\footnote{This choice of $K_\text{est}$ and $N_\text{est}$ is not particularly special.  We chose these values because \texttt{x\_est} is not quite correct, but does show certain artifacts that would allow us to revise our estimates of $K_\text{est}$ and $N_\text{est}$.}  We used Mark Schmidt's software package L1General to solve the augmented problem (\ref{eq:bce_aug}) \cite{schmidt_2010}.\\
 
-The results of the recovery are shown in Figure \ref{fig:bce_rec}.  We show the output and channel impulse response for only the first channel, as the second channel is similar.  Besides the overall magnitude ambiguity and time shift (which are inconsequential for acoustic channel estimation), peaks 7 and 8 have undergone a phase and time shift.  A careful observation of \texttt{x\_est} would lead us to revise our estimates of $K$ and $N$, which does lead to correctly estimating peaks 7 and 8.\\
+The results of the recovery are shown in Figure \ref{fig:bce_rec}.  We show the output and channel impulse response for only the first channel, as the second channel is similar.  Researchers studying the acoustic channel are mainly interested in the time delays between peaks and relative phase shifts.  Besides the overall magnitude ambiguity and time shift (which are inconsequential for acoustic channel estimation), peaks 7 and 8 have undergone a phase and time shift.  A careful observation of \texttt{x\_est} would lead us to revise our estimates of $K$ and $N$, which does lead to correctly estimating peaks 7 and 8.\\
 
+%TODO Do we want to show slightly bad recovery and mention how we can fix it by observing x_est?
+%     Or do we want to just show the good recovery right off the bat?  Maybe this would be better for the
+%     lecture note...
 \begin{figure}
    \centering
    \includegraphics[width=0.5\textwidth]{figures/bce_rec_003_x_trim.pdf}
@@ -469,6 +474,7 @@ The results of the recovery are shown in Figure \ref{fig:bce_rec}.  We show the 
 \end{figure}
 
 % ]]]
+
 
 \section{Discussion}
 % [[[

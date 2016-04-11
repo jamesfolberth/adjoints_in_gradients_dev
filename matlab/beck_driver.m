@@ -18,6 +18,12 @@ B=imfilter(X,P,'symmetric');
 randn('seed',314);
 Bobs=B + 1e-3*randn(size(B));
 
+% unblurred and blurred side-by-side
+%blur_fig = [X(:,1:size(X,2)/2) Bobs(:,1:size(X,2)/2)];
+%blur_fig(:,size(X,2)/2-3:size(X,2)/2+3) = 0;
+%size(blur_fig)
+%imwrite(blur_fig, 'resolution_blurred_figure.pgm');
+
 % from Beck+Teboulle's deblur_...
 % used for blurred image reconstruction error
 [m,n]=size(Bobs);
