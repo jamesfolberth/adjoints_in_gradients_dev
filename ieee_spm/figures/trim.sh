@@ -17,3 +17,5 @@ pdfcrop -margins 0 cameraman_observed.pdf cameraman_observed_trim.pdf
 pdfcrop -margins 0 pinv_adjoint_fun_values_bior4.4_sym.pdf pinv_adjoint_fun_values_bior4.4_sym_trim.pdf
 pdfcrop -margins 0 pinv_adjoint_fun_values_db1_sym.pdf pinv_adjoint_fun_values_db1_sym_trim.pdf
 
+pdfcrop -margins 30 pinv_adjoint_PSNR_bior4.4_sym.pdf pinv_adjoint_PSNR_bior4.4_sym_trim.pdf
+

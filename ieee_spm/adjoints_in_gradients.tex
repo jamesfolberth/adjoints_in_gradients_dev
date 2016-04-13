@@ -48,11 +48,11 @@ Boulder, CO, 80309 USA}}
 
 % For IEEE, Don't use math or other special symbols; greek probably okay.
 \begin{abstract}
-   First-order optimization algorithms require the gradient of the differentiable terms in the objective function.  We consider two example problems that have an Euclidean error term involving a linear operation on the problem variables.  The gradient of the Euclidean error term involves both the linear operator and its adjoint, which, in our examples, is not discussed in the literature.  The first example is an image deblurring problem, where the linear operation is multi-stage wavelet synthesis.  Our formulation of the adjoint holds for a variety of boundary conditions, which allows the formulation to generalize to a larger class of problems.  The second example is a blind channel estimation problem taken from the convex optimization literature; the linear operation is convolution, but with a slight twist.  In each example, we show how the adjoint operator can be applied efficiently.
+   First-order optimization algorithms require the gradient of the differentiable terms in the objective function.  We consider two example problems that have an Euclidean error term involving a linear operation on the problem variables.  The gradient of the Euclidean error term involves both the linear operator and its adjoint, which, in our examples, is not discussed in the literature.  The first example is an image deblurring problem, where the linear operation is multi-stage wavelet synthesis.  Our formulation of the adjoint holds for a variety of boundary conditions, which allows the formulation to generalize to a larger class of problems.  The second example is a blind channel estimation problem taken from the optimization literature; the linear operation is convolution, but with a slight twist.  In each example, we show how the adjoint operator can be applied efficiently.
 \end{abstract}
 
 \subsection*{Prerequisites}
-The reader should be familiar with linear algebra, wavelets, and basic Fourier analysis.  Knowledge of first-order iterative optimization algorithms is beneficial for motivating the fast adjoint computation, but should not be necessary to understand the adjoint computation itself.  We begin by briefly motivating the need for a fast adjoint operator and then turn toward the two examples.\\
+The reader should be familiar with linear algebra, wavelets, and basic Fourier analysis.  Knowledge of first-order iterative optimization algorithms is beneficial for motivating the fast adjoint computation, but should not be necessary to understand the adjoint computation itself.\\
 
 
 %     How do we cite Vandenberghe's course notes? http://www.seas.ucla.edu/~vandenbe/ee236c.html
@@ -265,15 +265,15 @@ Similarly, the periodic extension operator is
    \label{fig:compare_bior4.4_sym}
 \end{figure}
 
-%TODO resolution.pgm?
 %TODO makes more sense to give blurred image reconstruction error, since that's in the objective.
-%TODO % sparsity doesn't make sense.  Give integer nnz values.
 Figure \ref{fig:compare_bior4.4_sym} shows the deblurred image after 2500 iterations of FISTA using a three-stage CDF 9/7 discrete wavelet transform with symmetric boundary conditions.  Using the true adjoint, the image reconstruction relative error (vs. the unblurred image) is $9.45e-04$ and $29.23\%$ of the coefficients are nonzero.  Using the pseudoinverse approximation, the relative error is $9.67\times 10^-4$ and $29.74\%$ of the coefficients are nonzero.  Here the pseudoinverse approximation works, but doesn't work quite as well as the true adjoint.\\
 
 \begin{figure}
    \centering
    %\includegraphics[width=0.8\columnwidth]{{figures/pinv_adjoint_fun_values_db1_sym_trim}.pdf}
-   \includegraphics[width=\columnwidth]{{figures/pinv_adjoint_fun_values_bior4.4_sym_trim}.pdf}
+   %\includegraphics[width=\columnwidth]{{figures/pinv_adjoint_fun_values_bior4.4_sym_trim}.pdf}
+   \includegraphics[width=\columnwidth]{{figures/pinv_adjoint_PSNR_bior4.4_sym_trim}.pdf}
+   %TODO which figure do we want here?
    \caption{Convergence of FISTA for $\mathcal{W}$ a three-stage CDF 9/7 transform using either the true adjoint or the pseudoinverse approximation.  The objective value is normalized so the optimal value is $0$.}
    \label{fig:adjoint_convergence}
 \end{figure}
@@ -285,8 +285,11 @@ Figure \ref{fig:adjoint_convergence} shows the convergence of the objective valu
 
 %TODO perhaps introduce problem as min \sum_i \|x_i - h_i\ast s\|_2^2 + \|h_i\|_1 + \|s\|_1
 %     then introduce the linear operator \mathcal{A}
+%TODO update this section to use matched filter derivation instead of A(hs^T) and Hankel business.
 \section{Example 2: Blind Channel Estimation}
 % [[[
+Matched filter derivation: \cite{claerbout_1992}\\
+
 Another application where an interesting adjoint is involved in the gradient computation is in blind channel estimation.  In blind channel estimation, a single source sends an unknown signal over multiple channels with unknown response.  Observers collect the output of each channel and collectively attempt to determine the source signal and the channel impulse response from each channel.  Let $s$ be the unknown source signal of length $N$ and $h_i$ the channel impulse response of the $i$th channel, each of length $K$.  Then the output of the $i$th channel is
 
 \[ x_i = h_i\ast s, \] 

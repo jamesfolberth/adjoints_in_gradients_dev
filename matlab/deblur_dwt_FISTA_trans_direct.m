@@ -152,6 +152,7 @@ for i=1:MAXITER
 
     fun_val=norm(Sbig.*trans(WX_iter)-Btrans,'fro')^2+lambda*t;
     %[fun_val,~] = ssim_index(X, reshape(WSy(X_iter), size(X)), ssim_K, ssim_window, ssim_L);
+    %fun_val = 10*log10(prod(size(X))*1^2/norm(X-WSy(X_iter),'fro')^2);
     if (nargout>=2)
         fun_all=[fun_all;fun_val];
     end

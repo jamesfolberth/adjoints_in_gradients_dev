@@ -6,7 +6,8 @@ addpath('./beck_FISTA_matlab_files/HNO')
 %X = double(imread('cameraman_resize.pgm'));
 %X = double(imread('texmos3.pgm')); % from USC-SIPI
 %X = double(imread('clock.pgm'));   % from USC-SIPI
-X = double(imread('resolution.pgm')); % from USC-SIPI
+%X = double(imread('resolution.pgm')); % from USC-SIPI
+X = double(imread('resolution_crop.pgm'));
 X = X/255; % scale to [0,1]
 
 [P,center] = psfGauss([9,9],4);
@@ -61,8 +62,8 @@ dwtmode('zpd', 'nodisp');
 %extmode = 'zpd'
 extmode = 'sym'
 
-adjoint_mode = 'pinv';
-%adjoint_mode = 'adjoint';
+%adjoint_mode = 'pinv';
+adjoint_mode = 'adjoint';
 
 levels = 3;
 
@@ -99,10 +100,10 @@ fprintf(1, 'recovery nnz (%%nnz) = %d (%3.2f)\n', sum(abs(X_iter(:))>0),sum(abs(
 %fprintf(1, 'recovery %%(big coeffs) = %3.2f\n', sum(abs(X_iter(:)) > 1e-4)/numel(X_iter)*100);
 
 % show the recovered image and some other info
-%figure(3)
-%imshow(Xout,[])
-%imwrite(Xout, 'deblurred_images/tmp.pgm');
-%title(sprintf('Recovered - iter=%d, wname=''%s'', extmode=''%s''', pars.MAXITER, wname, extmode));
+figure(3)
+imshow(Xout,[])
+imwrite(Xout, 'deblurred_images/tmp.pgm');
+title(sprintf('Recovered - iter=%d, wname=''%s'', extmode=''%s''', pars.MAXITER, wname, extmode));
 
 % Plot the decay of non-zero values in wavelet coeffs
 %figure(4);
@@ -111,11 +112,11 @@ fprintf(1, 'recovery nnz (%%nnz) = %d (%3.2f)\n', sum(abs(X_iter(:))>0),sum(abs(
 %axis([0 1e5 1e-10 1e2]);
 
 % Plot the function values vs number of iterations
-figure(5)
-fstar = norm(Sbig.*trans(X)-Btrans,'fro')^2+lambda*sum(sum(abs(WAn(X))));
-semilogy(1:pars.MAXITER, fun_all-fstar);
-xlabel('Iteration');
-ylabel('Objective value');
+%figure(5)
+%fstar = norm(Sbig.*trans(X)-Btrans,'fro')^2+lambda*sum(sum(abs(WAn(X))));
+%semilogy(1:pars.MAXITER, fun_all-fstar);
+%xlabel('Iteration');
+%ylabel('Objective value');
 
 end
 

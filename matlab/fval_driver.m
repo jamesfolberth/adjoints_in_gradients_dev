@@ -33,7 +33,7 @@ Btrans = trans(Bobs);
 %lambda = 1e-4; % used in B+T's example code
 lambda = 2e-5; % used in FISTA SIAM paper
 
-pars.MAXITER=2500; % do this many iterations
+pars.MAXITER=25; % do this many iterations
 pars.fig=0; % suppress the figure while running FISTA
 %pars.BC='periodic';
 pars.B = 1; % TODO JMF need to look this up for CDF 9/7 wavelets
@@ -77,17 +77,17 @@ imwrite(Xout, 'deblurred_images/tmp.pgm');
 
 
 % Plot the function values vs number of iterations
-figure(5)
-iters = 1:pars.MAXITER;
-clf();
-hold on;
-semilogy(iters, fun_all-fstar, 'LineWidth', 3);
-semilogy(iters, fun_all_pinv-fstar, '--', 'LineWidth', 3);
-set(gca, 'YScale', 'log');
-hold off;
-legend('true adjoint', 'pinv approx');
-xlabel('Iteration');
-ylabel('Objective value');
+%figure(5)
+%iters = 1:pars.MAXITER;
+%clf();
+%hold on;
+%semilogy(iters, fun_all-fstar, 'LineWidth', 3);
+%semilogy(iters, fun_all_pinv-fstar, '--', 'LineWidth', 3);
+%set(gca, 'YScale', 'log');
+%hold off;
+%legend('true adjoint', 'pinv approx');
+%xlabel('Iteration');
+%ylabel('Objective value');
 
 %figure(5)
 %iters = 1:pars.MAXITER;
@@ -97,6 +97,9 @@ ylabel('Objective value');
 %xlabel('Iteration');
 %ylabel('SSIM');
 
+save('resolution_bior4.4_sym_fval.mat', 'fun_all_pinv', 'fun_all', 'fun_all_star');
+%save('resolution_bior4.4_sym_psnr.mat', 'fun_all_pinv', 'fun_all');
+%fval_plotter();
 
 end
 
