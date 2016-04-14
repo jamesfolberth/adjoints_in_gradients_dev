@@ -285,10 +285,202 @@ Figure \ref{fig:adjoint_convergence} shows the convergence of the objective valu
 
 %TODO perhaps introduce problem as min \sum_i \|x_i - h_i\ast s\|_2^2 + \|h_i\|_1 + \|s\|_1
 %     then introduce the linear operator \mathcal{A}
+%\section{Example 2: Blind Channel Estimation}
+%% [[[
+%Matched filter derivation: \cite{claerbout_1992}\\
+%
+%Another application where an interesting adjoint is involved in the gradient computation is in blind channel estimation.  In blind channel estimation, a single source sends an unknown signal over multiple channels with unknown response.  Observers collect the output of each channel and collectively attempt to determine the source signal and the channel impulse response from each channel.  Let $s$ be the unknown source signal of length $N$ and $h_i$ the channel impulse response of the $i$th channel, each of length $K$.  Then the output of the $i$th channel is
+%
+%\[ x_i = h_i\ast s, \] 
+%
+%\noindent and will be of length $K+N-1$ (we use $\ast$ to denote a linear convolution).  We hope to recover the source $s$ and channel responses $h_i$ from the output signals $x_i$.   However, note that there is both a magnitude and phase ambiguity in $h_i$ and $s$, since we can multiply $h_i$ by $\alpha\neq 0$ and divide $s$ by $\alpha$, leaving $x_i$ unchanged.\\
+%
+%Recently Ahmed et al. \cite{ahmed_2013} published a paper considering blind deconvolution via convex optimization.  Crucial to their method, which is based on low-rank recovery, is the following observation: the convolution $h_i\ast s$ can be formed as a linear operation on the elements of the rank-1 matrix $h_is^T$:
+%
+%\[ h_i\ast s = \mathcal{A}(h_is^T). \] 
+%
+%\noindent The operation $x_i=\mathcal{A}(h_is^T)$ acts on the $K\times N$ matrix $h_is^T$ by summing each anti-diagonal, producing an element of $x_i$.  This action is illustrated in Figure \ref{fig:action_of_A}.  In an implementation, we of course compute $x_i=h_i\ast s$ via an FFT.\\
+%
+%For simplicity, let's assume we have a single channel $h$ with observed output $x$; we will extend the problem to two channels in an example to follow.  Using the convolution operator $\mathcal{A}$, we can pose the recovery problem as
+%
+%\[ \min_{h,s}~ \|\mathcal{A}(hs^T)-x\|_2^2 + \lambda_h\|h\|_1 + \lambda_s \|s\|_1, \] 
+%
+%\noindent where we include the terms $\lambda_h\|h\|_1$ and $\lambda_s\|s\|_1$ to promote sparsity in the recovered signals.  To promote other structure in the recovered signals (assuming it is present in the true signals), we can in principle include other terms, such as $\|h\|_{TV}$, the total-variation norm.  Note that since this problem involves $hs^T$, it involves products of the problem variables and so is a non-convex problem.\\
+%
+%The gradients of the differentiable $\ell_2$ error term $g(h,s)=\|\mathcal{A}(hs^T)-x\|_2^2$ are
+%
+%\begin{align*}
+%   \nabla_h g &= \left[\mathcal{A}^\ast\left(A(hs^T) - x\right)\right]s\\
+%   \nabla_s g &= \left[\mathcal{A}^\ast\left(A(hs^T) - x\right)\right]^Th.
+%\end{align*}
+%
+%\begin{figure}
+%\begin{tikzpicture}[baseline=(hs.center)]
+%   % [[[
+%   % based on figure from Romberg et al. "Multichannel blind deconvolution..."
+%   % and examples from http://www.texample.net/tikz/examples/mnemonic-rule-for-matrix-determinant/
+%   % http://tex.stackexchange.com/questions/83046/position-two-stacked-tikz-matrices
+%   % http://www.texample.net/tikz/examples/energy-level-diagram/
+%   \matrix (hs) [matrix of math nodes, nodes = {node style ge},, column sep=0mm, row sep=-8mm]
+%   {h_i[0]s[0] & h_i[0]s[1] & h_i[0]s[2] & h_i[0]s[3] \\
+%    h_i[1]s[0] & h_i[1]s[1] & h_i[1]s[2] & h_i[1]s[3] \\
+%    h_i[2]s[0] & h_i[2]s[1] & h_i[2]s[2] & h_i[2]s[3] \\
+%    h_i[3]s[0] & h_i[3]s[1] & h_i[3]s[2] & h_i[3]s[3] \\
+%    h_i[4]s[0] & h_i[4]s[1] & h_i[4]s[2] & h_i[4]s[3] \\
+%    h_i[5]s[0] & h_i[5]s[1] & h_i[5]s[2] & h_i[5]s[3] \\
+%    h_i[6]s[0] & h_i[6]s[1] & h_i[6]s[2] & h_i[6]s[3] \\
+%    h_i[7]s[0] & h_i[7]s[1] & h_i[7]s[2] & h_i[7]s[3] \\
+%    \vdots & \vdots & \vdots & \vdots\\
+%   };
+%
+%   \begin{scope}[xshift=-35mm,yshift=-2.5mm]
+%   %TODO need to hack these offsets and spacits correctly
+%   \matrix (y) [matrix of math nodes, nodes = {node style ge},, column sep=0mm, row sep=-3mm]
+%   {x_i[0]\\
+%    x_i[1]\\
+%    x_i[2]\\
+%    x_i[3]\\
+%    x_i[4]\\
+%    x_i[5]\\
+%    x_i[6]\\[-2mm]
+%    \vdots\\
+%   };
+%   \end{scope}
+%
+%   \draw [thick,->,>=stealth,shorten >=4mm,shorten <=-4mm,color=blue] (hs-1-1.center) to ($(y-1-1.center) + (0mm,-1mm)$); % this is a hack, but it's quite close
+%   \draw [thick,->,>=stealth,shorten >=-9mm,shorten <=-4mm,color=blue] (hs-1-2.center) to (hs-2-1.center);
+%   \draw [thick,->,>=stealth,shorten >=-9mm,shorten <=-4mm,color=blue] (hs-1-3.center) to (hs-3-1.center);
+%   \draw [thick,->,>=stealth,shorten >=-9mm,shorten <=-4mm,color=blue] (hs-1-4.center) to (hs-4-1.center);
+%   \draw [thick,->,>=stealth,shorten >=-9mm,shorten <=-4mm,color=blue] (hs-2-4.center) to (hs-5-1.center);
+%   \draw [thick,->,>=stealth,shorten >=-9mm,shorten <=-4mm,color=blue] (hs-3-4.center) to (hs-6-1.center);
+%   \draw [thick,->,>=stealth,shorten >=-9mm,shorten <=-4mm,color=blue] (hs-4-4.center) to (hs-7-1.center);
+%   % ]]]
+%\end{tikzpicture}
+%\caption{How the channel output $x_i$ is formed via $\mathcal{A}(h_is^T)$.  Each entry of $x_i$ is the sum of an anti-diagonal of $h_is^T$.  Notice that all convolution terms appear in the outer product $h_is^T$, so $\mathcal{A}$ is indeed just a linear operator on the matrix $h_is^T$.  Adapted from \cite{romberg_2013}.}
+%\label{fig:action_of_A}
+%\end{figure}
+%
+%\noindent The operator $\mathcal{A}$ is a little bit strange in that it maps matrices to vectors, so its adjoint is not quite obvious (i.e. we cannot directly compute the conjugate transpose of $\mathcal{A}$), but we do know that the adjoint maps vectors to matrices.  This fact is apparent in $\nabla_sg$, where we must compute a matrix-vector product with the matrix transpose of $\mathcal{A}^\ast\left(\mathcal{A}(hs^T)-x\right)$.  Note that the matrix transpose of $\mathcal{A}^\ast(\cdot)$ is different than applying another adjoint to $\mathcal{A}^\ast$.\\
+%
+%To find the adjoint, we must use the general definition of the adjoint operator.  We consider an arbitrary matrix $X\in\reals^{K\times N}$ and vector $y\in\reals^{K+N-1}$.  The adjoint is defined via
+%
+%\begin{equation}
+%   \label{eq:A_adjoint_def}
+%   \left\langle \mathcal{A}(X),y \right\rangle = \left\langle X, \mathcal{A}^\ast(y)\right\rangle \quad \forall X,y.
+%\end{equation}
+%
+%\noindent Note that the inner product on the left-hand side of equation \ref{eq:A_adjoint_def} is the usual vector inner product on $\reals^{K+N-1}$, while the inner product on the right-hand side is the usual matrix inner product on $\reals^{K\times N}$.  We can explicitly write down $\mathcal{A}(X)$, which is just a linear convolution, and expand the vector inner product.
+%
+%\[ \left\langle \mathcal{A}(X),y\right\rangle = \sum_{k=0}^{K+N-2}y[k] \left(\sum_{n=n_1(k)}^{n_2(k)} X[n,k-n]\right) \] 
+%
+%\noindent where we have defined the bounds ${n_1(k) = {\max\{0,k+1-N\}}}$ and ${n_2(k) = {\min\{K-1,k\}}}$.  If $X=h_is^T$, then the inner summation computes the $k$th term of the convolution $h_i\ast s$.  We can expand the first few terms of the vector inner product and keep track of the terms multiplying $y[k]$.
+%
+%\begin{align*}
+%   \left\langle\mathcal{A}(X),y\right\rangle &= y[0]X[0,0] + y[1]\left(X[0,1]+X[1,0]\right)\\
+%                                             &\,+ y[2]\left(X[0,2] + X[1,1] + X[2,0]\right) + \cdots.\\
+%\end{align*}
+%
+%\noindent Now notice that $X[k,n]$ is always multiplied by $y[k+n]$.  This means that we can isolate $X[k,n]$ and write
+%
+%\[ \left\langle\mathcal{A}(X),y\right\rangle = \sum_{k=0}^{K-1}\sum_{n=0}^{N-1} X[k,n]y[k+n] = \left\langle X,\mathcal{A}^\ast(y)\right\rangle. \] 
+%
+%\noindent Define the $K\times N$ Hankel matrix by $Y[k,n] = y[k+n]$, and then we have the adjoint $\mathcal{A}^\ast(y) = Y$.\\
+%
+%It turns out that we can compute matrix-vector products with the Hankel matrix $Y$ rapidly, even though $Y$ is dense \cite{golub_1996}.  To illustrate the manner in which we can compute a fast Hankel matrix-vector product, consider the case $K=3$ and $N=5$.  The Hankel matrix $Y$ is
+%
+%   \[ Y = \begin{bmatrix} y[0] & y[1] & y[2] & y[3] & y[4]\\
+%                          y[1] & y[2] & y[3] & y[4] & y[5]\\
+%                          y[2] & y[3] & y[4] & y[5] & y[6]\\\end{bmatrix}. \] 
+%
+%\noindent Note that we only store the first column and last row of $Y$.  We can reverse the order of the columns of $Y$, resulting in the Toeplitz matrix
+%
+%\[ T = YP = \begin{bmatrix}
+%       y[4] & y[3] & y[2] & y[1] & y[0]\\
+%       y[5] & y[4] & y[3] & y[2] & y[1]\\
+%       y[6] & y[5] & y[4] & y[3] & y[2]\\\end{bmatrix}, \] 
+%
+%\noindent where
+%
+%\[               \quad P = \begin{bmatrix} 0 & 0 & 0 & 0 & 1\\
+%                                        0 & 0 & 0 & 1 & 0\\
+%                                        0 & 0 & 1 & 0 & 0\\
+%                                        0 & 1 & 0 & 0 & 0\\
+%                                        1 & 0 & 0 & 0 & 0\\ \end{bmatrix}. \] 
+%
+%\noindent Similarly, we only need to store the first column and row of $T$.  We can then embed the Toeplitz matrix in a circulant matrix
+%
+%   % http://tex.stackexchange.com/questions/33519/vertical-line-in-matrix-using-latexit
+%   \[ C = \left[\begin{array}{@{}ccccc|cc@{}}
+%                y[4] & y[3] & y[2] & y[1] & y[0] & y[6] & y[5]\\
+%                y[5] & y[4] & y[3] & y[2] & y[1] & y[0] & y[6]\\
+%                y[6] & y[5] & y[4] & y[3] & y[2] & y[1] & y[0]\\
+%                \hline
+%                y[0] & y[6] & y[5] & y[4] & y[3] & y[2] & y[1]\\
+%                y[1] & y[0] & y[6] & y[5] & y[4] & y[3] & y[2]\\
+%                y[2] & y[1] & y[0] & y[6] & y[5] & y[4] & y[3]\\
+%                y[3] & y[2] & y[1] & y[0] & y[6] & y[5] & y[4]\\
+%                \end{array}\right], \] 
+%
+%\noindent where we store only the first column of $C$.  Recall that matrix-vector multiplication with a circulant vector is circular convolution with the first column of $C$ (moreover, circulant matrices are diagonalized by the discrete Fourier transform $\mathcal{F}$).  Therefore, we can compute fast circulant matrix-vector products via the FFT by performing element-wise multiplication in the frequency domain.\\
+%
+%To make all of this work for a Hankel matrix-vector product, say $w=Yz$, where $z$ has length $N$, we must keep track of all the intermediate changes to $Y$.  Let $z_r = Pz$ be the reversed order of $z$.  Then ${w=Yz=YPPz=Tz_r}$.  Let $z_a$ be $z_r$ with $K-1$ additional zeros at the end:
+%
+%\[ z[N-1], ..., z[0], \underbrace{0, ..., 0}_{K-1}. \]
+%
+%\noindent This is the corresponding change to embedding $T$ in the circulant matrix $C$.  We then compute the circulant matrix-vector product $Cz_a$ in the frequency domain.  Let $c$ be the first column of $C$.  Then
+%
+%\[ Cz_a = \mathcal{F}^{-1}\left[\left(\mathcal{F}c\right).*\left(\mathcal{F}z_a\right)\right], \] 
+%
+%\noindent where $\mathcal{F}$ is the DFT of length $K+N-1$ (computed with an FFT) and $.*$ is the element-wise (Hadamard) product.  Finally, the $K-1$ elements of $w$ are in the first $K-1$ entries of $Cz_a$.\\
+%
+%% TODO What example of this should we do?
+%%      \cite some of Brendan's papers?  as personal communication or whatever Brendan's preference is
+%Now that we can compute the action of $\mathcal{A}^\ast(y)$, we can compute gradients and use existing first-order methods.  As an example, we consider a simulated underwater acoustic channel.  A single unknown real source signal is broadcast over two acoustic channels with unknown real impulse responses.  Additionally, zero mean Gaussian noise with standard deviation $0.005$ is added to each output signal.  We extend the blind channel estimation problem to two channels quite naturally:
+%
+%\begin{align*}
+%   \min_{h_i,s} ~&\sum_{i=1}^2\left(\left\|\mathcal{A}(h_is^T) - x_i\right\|_2^2 + \lambda_{h}\|h_i\|_1\right) + \lambda_s\|s\|_1
+%\end{align*}
+%
+%\noindent Further, we may add a differentiable total-variation-like term.  The addition of a total-variation-like term may induce sharp transitions and stretches of nearly constant signal values (e.g. where the channel impulse response is constant for brief periods).  The true total-variation (TV) norm of $h$ may be computed as $\|\mathcal{D}h\|_1$, where $\mathcal{D}$ is the operator that subtracts consecutive pairs of elements of $h$: $\{\mathcal{D}h\}_j = h_{j+1} - h_j$.  We can in fact form $\mathcal{D}$ as a sparse matrix and compute $\mathcal{D}^\ast$ easily.  To ``soften'' the TV norm to a differentiable term, we may use the Huber function, defined as
+%
+%\[ L_\delta(z) = \left\{\begin{array}{ll} \frac{1}{2}z^2 & |z| \le \delta\\ \delta\left(|z| - \frac{1}{2}\delta\right) & |z| > \delta. \end{array}\right. \] 
+%
+%\noindent The Huber function is commonly used in regression with outliers, as it is linear for $|z|>\delta$, and so it is less sensitive to outliers.  Unlike $\|\cdot\|_1$, the Huber function is differentiable for all $z$.  We can approximate the TV norm with ${\|h\|_\text{TV} \defeq\|\mathcal{D}h\|_1 \approx L_\delta(\mathcal{D}h)/\delta}$.  The augmented problem, with the differentiable total-variation-like term is
+%
+%%TODO how to typeset this?
+%\begin{align}
+%   \label{eq:bce_aug}
+%   \min_{h_i,s} ~&\sum_{i=1}^2\biggl(\left\|\mathcal{A}(h_is^T)-x_i\right\|_2^2 + \lambda_{h,\text{TV}}L_\delta(\mathcal{D}h_i)/\delta\nonumber\\
+%                 &+ \lambda_{h}\|h_i\|_1\biggr) + \lambda_s\|s\|_1
+%   %\min_{h_i,s} ~&\|\mathcal{A}(h_1s^T)-x_1\|_2^2 + \lambda_{h,\text{TV}}L_\delta(\mathcal{D}h_1)/\delta + \lambda_{h}\|h_1\|_1+ \lambda_s\|s\|_1\nonumber\\
+%   %              &\|\mathcal{A}(h_2s^T)-x_2\|_2^2 + \lambda_{h,\text{TV}}L_\delta(\mathcal{D}h_2)/\delta + \lambda_{h}\|h_2\|_1.
+%\end{align}
+%
+%%TODO how to cite Brendan's data?
+%It is straightforward to include the ``soft'' TV term in the gradients, and we can use standard first-order algorithms to solve the augmented problem.  Brendan Rideout of the University of Hawai`i provided simulated data containing an impulsive source, two underwater acoustic channel impulse responses, and the two outputs of the underwater channels.  The simulation also added zero mean Gaussian noise with standard deviation $0.005$.  We used the two channel outputs to attempt to recover the impulsive source and channel impulse responses.\\
+%
+%We take $\lambda_h = 0.1$, $\lambda_s=0.01$, $\lambda_{h,\text{TV}}=0.01$, and $\delta=0.1$ for the Huber functions $L_\delta(\cdot)$.  We initialized $h_i$ and $s$ with zero mean Gaussian random numbers with unit standard deviation.  In practice, we may not know the true lengths of $h_i$ and $s$, $K$ and $N$, respectively.  We do know the length of the observed signals, which is $K+N-1$.  In this example, $K=894$ and $N=1717$, and we guess $K_\text{est}=794$ and $N_\text{est}=1817$.\footnote{This choice of $K_\text{est}$ and $N_\text{est}$ is not particularly special.  We chose these values because \texttt{x\_est} is not quite correct, but does show certain artifacts that would allow us to revise our estimates of $K_\text{est}$ and $N_\text{est}$.}  We used Mark Schmidt's software package L1General to solve the augmented problem (\ref{eq:bce_aug}) \cite{schmidt_2010}.\\
+%
+%The results of the recovery are shown in Figure \ref{fig:bce_rec}.  We show the output and channel impulse response for only the first channel, as the second channel is similar.  Researchers studying the acoustic channel are mainly interested in the time delays between peaks and relative phase shifts.  Besides the overall magnitude ambiguity and time shift (which are inconsequential for acoustic channel estimation), peaks 7 and 8 have undergone a phase and time shift.  A careful observation of \texttt{x\_est} would lead us to revise our estimates of $K$ and $N$, which does lead to correctly estimating peaks 7 and 8.\\
+%
+%%TODO Do we want to show slightly bad recovery and mention how we can fix it by observing x_est?
+%%     Or do we want to just show the good recovery right off the bat?  Maybe this would be better for the
+%%     lecture note...
+%\begin{figure}
+%   \centering
+%   \includegraphics[width=0.5\textwidth]{figures/bce_rec_003_x_trim.pdf}
+%   \includegraphics[width=0.5\textwidth]{figures/bce_rec_003_h_trim.pdf}
+%   \includegraphics[width=0.5\textwidth]{figures/bce_rec_003_s_trim.pdf}
+%   \caption{Blind channel estimation via problem (\ref{eq:bce_aug}) for underwater acoustic impulsive source.  Shown are the true and estimated first channel output, first channel impulse response, and source.  The estimated source signal and impulse responses appear remarkably similar to the true signals.}
+%   \label{fig:bce_rec}
+%\end{figure}
+%
+%% ]]]
+
 %TODO update this section to use matched filter derivation instead of A(hs^T) and Hankel business.
 \section{Example 2: Blind Channel Estimation}
 % [[[
-Matched filter derivation: \cite{claerbout_1992}\\
+%Matched filter derivation: \cite{claerbout_1992}\\
 
 Another application where an interesting adjoint is involved in the gradient computation is in blind channel estimation.  In blind channel estimation, a single source sends an unknown signal over multiple channels with unknown response.  Observers collect the output of each channel and collectively attempt to determine the source signal and the channel impulse response from each channel.  Let $s$ be the unknown source signal of length $N$ and $h_i$ the channel impulse response of the $i$th channel, each of length $K$.  Then the output of the $i$th channel is
 
@@ -296,147 +488,37 @@ Another application where an interesting adjoint is involved in the gradient com
 
 \noindent and will be of length $K+N-1$ (we use $\ast$ to denote a linear convolution).  We hope to recover the source $s$ and channel responses $h_i$ from the output signals $x_i$.   However, note that there is both a magnitude and phase ambiguity in $h_i$ and $s$, since we can multiply $h_i$ by $\alpha\neq 0$ and divide $s$ by $\alpha$, leaving $x_i$ unchanged.\\
 
-Recently Ahmed et al. \cite{ahmed_2013} published a paper considering blind deconvolution via convex optimization.  Crucial to their method, which is based on low-rank recovery, is the following observation: the convolution $h_i\ast s$ can be formed as a linear operation on the elements of the rank-1 matrix $h_is^T$:
+For simplicity, let's assume we have a single channel $h$ with observed output $x$; we will extend the problem to more channels in an example to follow.  We can pose the blind deconvolution problem for a single channel as
 
-\[ h_i\ast s = \mathcal{A}(h_is^T). \] 
+\[ \min_{h,s}~ \|h\ast s-x\|_2^2 + \lambda_h\|h\|_1 + \lambda_s \|s\|_1, \] 
 
-\noindent The operation $x_i=\mathcal{A}(h_is^T)$ acts on the $K\times N$ matrix $h_is^T$ by summing each anti-diagonal, producing an element of $x_i$.  This action is illustrated in Figure \ref{fig:action_of_A}.  In an implementation, we of course compute $x_i=h_i\ast s$ via an FFT.\\
+\noindent where we include the terms $\lambda_h\|h\|_1$ and $\lambda_s\|s\|_1$ to promote sparsity in the recovered signals.  To promote other structure in the recovered signals (assuming it is present in the true signals), we can include other terms, such as $\|h\|_{TV}$, the total-variation norm.  Note that since this problem involves $h\ast s$, it involves products of the problem variables and so is a non-convex problem.\\
 
-For simplicity, let's assume we have a single channel $h$ with observed output $x$; we will extend the problem to two channels in an example to follow.  Using the convolution operator $\mathcal{A}$, we can pose the recovery problem as
+Let $f(h,s)=\|h\ast s -x\|_2^2$ be the differentiable part of the objective.  First order methods require $\nabla_hf$ and $\nabla_sf$.  Note that when computing $\nabla_hf$, we hold $s$ fixed, and \emph{vice versa} for $\nabla_sf$.  Following \cite{claerbout_1992}, we may determine a fast method for evaluating these gradients.  To illustrate the derivation, consider the case $K=3$ and $N=5$.  Set $x_\text{est}=h\ast s$.  We can write the convolution as a matrix-vector product in a couple different ways.  The first,
 
-\[ \min_{h,s}~ \|\mathcal{A}(hs^T)-x\|_2^2 + \lambda_h\|h\|_1 + \lambda_s \|s\|_1, \] 
+\[ x_\text{est} = \begin{bmatrix} h[0]\\h[1]&h[0]\\h[2]&h[1]&h[0]\\&h[2]&h[1]&h[0]\\&&h[2]&h[1]&h[0]\\&&&h[2]&h[1]\\&&&&h[2]\end{bmatrix}\begin{bmatrix}s[0]\\s[1]\\s[2]\\s[3]\\s[4]\end{bmatrix}, \] 
 
-\noindent where we include the terms $\lambda_h\|h\|_1$ and $\lambda_s\|s\|_1$ to promote sparsity in the recovered signals.  To promote other structure in the recovered signals (assuming it is present in the true signals), we can in principle include other terms, such as $\|h\|_{TV}$, the total-variation norm.  Note that since this problem involves $hs^T$, it involves products of the problem variables and so is a non-convex problem.\\
+\noindent puts $h$ in the matrix, and the second,
 
-The gradients of the differentiable $\ell_2$ error term $g(h,s)=\|\mathcal{A}(hs^T)-x\|_2^2$ are
+\[ x_\text{est} = \begin{bmatrix} s[0]\\s[1]&s[0]\\s[2]&s[1]&s[0]\\s[3]&s[2]&s[1]\\s[4]&s[3]&s[2]\\&s[4]&s[3]\\&&s[4]\end{bmatrix}\begin{bmatrix}h[0]\\h[1]\\h[2]\end{bmatrix}, \] 
 
-\begin{align*}
-   \nabla_h g &= \left[\mathcal{A}^\ast\left(A(hs^T) - x\right)\right]s\\
-   \nabla_s g &= \left[\mathcal{A}^\ast\left(A(hs^T) - x\right)\right]^Th.
-\end{align*}
+\noindent puts $s$ in the matrix.  For the gradient $\nabla_hf$, we treat $s$ as a constant, and so it is natural to use the second matrix-vector product.  We have
 
-\begin{figure}
-\begin{tikzpicture}[baseline=(hs.center)]
-   % [[[
-   % based on figure from Romberg et al. "Multichannel blind deconvolution..."
-   % and examples from http://www.texample.net/tikz/examples/mnemonic-rule-for-matrix-determinant/
-   % http://tex.stackexchange.com/questions/83046/position-two-stacked-tikz-matrices
-   % http://www.texample.net/tikz/examples/energy-level-diagram/
-   \matrix (hs) [matrix of math nodes, nodes = {node style ge},, column sep=0mm, row sep=-8mm]
-   {h_i[0]s[0] & h_i[0]s[1] & h_i[0]s[2] & h_i[0]s[3] \\
-    h_i[1]s[0] & h_i[1]s[1] & h_i[1]s[2] & h_i[1]s[3] \\
-    h_i[2]s[0] & h_i[2]s[1] & h_i[2]s[2] & h_i[2]s[3] \\
-    h_i[3]s[0] & h_i[3]s[1] & h_i[3]s[2] & h_i[3]s[3] \\
-    h_i[4]s[0] & h_i[4]s[1] & h_i[4]s[2] & h_i[4]s[3] \\
-    h_i[5]s[0] & h_i[5]s[1] & h_i[5]s[2] & h_i[5]s[3] \\
-    h_i[6]s[0] & h_i[6]s[1] & h_i[6]s[2] & h_i[6]s[3] \\
-    h_i[7]s[0] & h_i[7]s[1] & h_i[7]s[2] & h_i[7]s[3] \\
-    \vdots & \vdots & \vdots & \vdots\\
-   };
+\[ \nabla_hf = \nabla_h\|Sh-x\|^2 = S^\ast(Sh-x) = S^\ast r, \] 
 
-   \begin{scope}[xshift=-35mm,yshift=-2.5mm]
-   %TODO need to hack these offsets and spacits correctly
-   \matrix (y) [matrix of math nodes, nodes = {node style ge},, column sep=0mm, row sep=-3mm]
-   {x_i[0]\\
-    x_i[1]\\
-    x_i[2]\\
-    x_i[3]\\
-    x_i[4]\\
-    x_i[5]\\
-    x_i[6]\\[-2mm]
-    \vdots\\
-   };
-   \end{scope}
+\noindent where we define the residual $r=Sh-x = x_\text{est}-x$.  Written out, this gradient is
 
-   \draw [thick,->,>=stealth,shorten >=4mm,shorten <=-4mm,color=blue] (hs-1-1.center) to ($(y-1-1.center) + (0mm,-1mm)$); % this is a hack, but it's quite close
-   \draw [thick,->,>=stealth,shorten >=-9mm,shorten <=-4mm,color=blue] (hs-1-2.center) to (hs-2-1.center);
-   \draw [thick,->,>=stealth,shorten >=-9mm,shorten <=-4mm,color=blue] (hs-1-3.center) to (hs-3-1.center);
-   \draw [thick,->,>=stealth,shorten >=-9mm,shorten <=-4mm,color=blue] (hs-1-4.center) to (hs-4-1.center);
-   \draw [thick,->,>=stealth,shorten >=-9mm,shorten <=-4mm,color=blue] (hs-2-4.center) to (hs-5-1.center);
-   \draw [thick,->,>=stealth,shorten >=-9mm,shorten <=-4mm,color=blue] (hs-3-4.center) to (hs-6-1.center);
-   \draw [thick,->,>=stealth,shorten >=-9mm,shorten <=-4mm,color=blue] (hs-4-4.center) to (hs-7-1.center);
-   % ]]]
-\end{tikzpicture}
-\caption{How the channel output $x_i$ is formed via $\mathcal{A}(h_is^T)$.  Each entry of $x_i$ is the sum of an anti-diagonal of $h_is^T$.  Notice that all convolution terms appear in the outer product $h_is^T$, so $\mathcal{A}$ is indeed just a linear operator on the matrix $h_is^T$.  Adapted from \cite{romberg_2013}.}
-\label{fig:action_of_A}
-\end{figure}
+\[ \nabla_h f = \begin{bmatrix} \bar{s}[0]&\bar{s}[1]&\bar{s}[2]&\bar{s}[3]&\bar{s}[4]\\&\bar{s}[0]&\bar{s}[1]&\bar{s}[2]&\bar{s}[3]&\bar{s}[4]\\&&\bar{s}[0]&\bar{s}[1]&\bar{s}[2]&\bar{s}[3]&\bar{s}[4]\\\end{bmatrix}\begin{bmatrix}r[0]\\r[1]\\r[2]\\r[3]\\r[4]\\r[5]\\r[6]\end{bmatrix}. \] 
 
-\noindent The operator $\mathcal{A}$ is a little bit strange in that it maps matrices to vectors, so its adjoint is not quite obvious (i.e. we cannot directly compute the conjugate transpose of $\mathcal{A}$), but we do know that the adjoint maps vectors to matrices.  This fact is apparent in $\nabla_sg$, where we must compute a matrix-vector product with the matrix transpose of $\mathcal{A}^\ast\left(\mathcal{A}(hs^T)-x\right)$.  Note that the matrix transpose of $\mathcal{A}^\ast(\cdot)$ is different than applying another adjoint to $\mathcal{A}^\ast$.\\
+\noindent We recognize this as the cross-correlation between $s$ and $r$:
 
-To find the adjoint, we must use the general definition of the adjoint operator.  We consider an arbitrary matrix $X\in\reals^{K\times N}$ and vector $y\in\reals^{K+N-1}$.  The adjoint is defined via
+\[ \nabla_h f[n] = \sum_{k=0}^4 \bar{s}[k]r[k+n] = s[n]\star r[n] = \bar{s}[-n]\ast r[n], \]
 
-\begin{equation}
-   \label{eq:A_adjoint_def}
-   \left\langle \mathcal{A}(X),y \right\rangle = \left\langle X, \mathcal{A}^\ast(y)\right\rangle \quad \forall X,y.
-\end{equation}
-
-\noindent Note that the inner product on the left-hand side of equation \ref{eq:A_adjoint_def} is the usual vector inner product on $\reals^{K+N-1}$, while the inner product on the right-hand side is the usual matrix inner product on $\reals^{K\times N}$.  We can explicitly write down $\mathcal{A}(X)$, which is just a linear convolution, and expand the vector inner product.
-
-\[ \left\langle \mathcal{A}(X),y\right\rangle = \sum_{k=0}^{K+N-2}y[k] \left(\sum_{n=n_1(k)}^{n_2(k)} X[n,k-n]\right) \] 
-
-\noindent where we have defined the bounds ${n_1(k) = {\max\{0,k+1-N\}}}$ and ${n_2(k) = {\min\{K-1,k\}}}$.  If $X=h_is^T$, then the inner summation computes the $k$th term of the convolution $h_i\ast s$.  We can expand the first few terms of the vector inner product and keep track of the terms multiplying $y[k]$.
-
-\begin{align*}
-   \left\langle\mathcal{A}(X),y\right\rangle &= y[0]X[0,0] + y[1]\left(X[0,1]+X[1,0]\right)\\
-                                             &\,+ y[2]\left(X[0,2] + X[1,1] + X[2,0]\right) + \cdots.\\
-\end{align*}
-
-\noindent Now notice that $X[k,n]$ is always multiplied by $y[k+n]$.  This means that we can isolate $X[k,n]$ and write
-
-\[ \left\langle\mathcal{A}(X),y\right\rangle = \sum_{k=0}^{K-1}\sum_{n=0}^{N-1} X[k,n]y[k+n] = \left\langle X,\mathcal{A}^\ast(y)\right\rangle. \] 
-
-\noindent Define the $K\times N$ Hankel matrix by $Y[k,n] = y[k+n]$, and then we have the adjoint $\mathcal{A}^\ast(y) = Y$.\\
-
-It turns out that we can compute matrix-vector products with the Hankel matrix $Y$ rapidly, even though $Y$ is dense \cite{golub_1996}.  To illustrate the manner in which we can compute a fast Hankel matrix-vector product, consider the case $K=3$ and $N=5$.  The Hankel matrix $Y$ is
-
-   \[ Y = \begin{bmatrix} y[0] & y[1] & y[2] & y[3] & y[4]\\
-                          y[1] & y[2] & y[3] & y[4] & y[5]\\
-                          y[2] & y[3] & y[4] & y[5] & y[6]\\\end{bmatrix}. \] 
-
-\noindent Note that we only store the first column and last row of $Y$.  We can reverse the order of the columns of $Y$, resulting in the Toeplitz matrix
-
-\[ T = YP = \begin{bmatrix}
-       y[4] & y[3] & y[2] & y[1] & y[0]\\
-       y[5] & y[4] & y[3] & y[2] & y[1]\\
-       y[6] & y[5] & y[4] & y[3] & y[2]\\\end{bmatrix}, \] 
-
-\noindent where
-
-\[               \quad P = \begin{bmatrix} 0 & 0 & 0 & 0 & 1\\
-                                        0 & 0 & 0 & 1 & 0\\
-                                        0 & 0 & 1 & 0 & 0\\
-                                        0 & 1 & 0 & 0 & 0\\
-                                        1 & 0 & 0 & 0 & 0\\ \end{bmatrix}. \] 
-
-\noindent Similarly, we only need to store the first column and row of $T$.  We can then embed the Toeplitz matrix in a circulant matrix
-
-   % http://tex.stackexchange.com/questions/33519/vertical-line-in-matrix-using-latexit
-   \[ C = \left[\begin{array}{@{}ccccc|cc@{}}
-                y[4] & y[3] & y[2] & y[1] & y[0] & y[6] & y[5]\\
-                y[5] & y[4] & y[3] & y[2] & y[1] & y[0] & y[6]\\
-                y[6] & y[5] & y[4] & y[3] & y[2] & y[1] & y[0]\\
-                \hline
-                y[0] & y[6] & y[5] & y[4] & y[3] & y[2] & y[1]\\
-                y[1] & y[0] & y[6] & y[5] & y[4] & y[3] & y[2]\\
-                y[2] & y[1] & y[0] & y[6] & y[5] & y[4] & y[3]\\
-                y[3] & y[2] & y[1] & y[0] & y[6] & y[5] & y[4]\\
-                \end{array}\right], \] 
-
-\noindent where we store only the first column of $C$.  Recall that matrix-vector multiplication with a circulant vector is circular convolution with the first column of $C$ (moreover, circulant matrices are diagonalized by the discrete Fourier transform $\mathcal{F}$).  Therefore, we can compute fast circulant matrix-vector products via the FFT by performing element-wise multiplication in the frequency domain.\\
-
-To make all of this work for a Hankel matrix-vector product, say $w=Yz$, where $z$ has length $N$, we must keep track of all the intermediate changes to $Y$.  Let $z_r = Pz$ be the reversed order of $z$.  Then ${w=Yz=YPPz=Tz_r}$.  Let $z_a$ be $z_r$ with $K-1$ additional zeros at the end:
-
-\[ z[N-1], ..., z[0], \underbrace{0, ..., 0}_{K-1}. \]
-
-\noindent This is the corresponding change to embedding $T$ in the circulant matrix $C$.  We then compute the circulant matrix-vector product $Cz_a$ in the frequency domain.  Let $c$ be the first column of $C$.  Then
-
-\[ Cz_a = \mathcal{F}^{-1}\left[\left(\mathcal{F}c\right).*\left(\mathcal{F}z_a\right)\right], \] 
-
-\noindent where $\mathcal{F}$ is the DFT of length $K+N-1$ (computed with an FFT) and $.*$ is the element-wise (Hadamard) product.  Finally, the $K-1$ elements of $w$ are in the first $K-1$ entries of $Cz_a$.\\
+\noindent where $\bar{s}[-n]$ is the matched filter of $s$.  It is immediately apparent that we can compute $\nabla_hf$ efficiently via the FFT.  The derivation and computations for $\nabla_sf$ are the same.\\
 
 % TODO What example of this should we do?
 %      \cite some of Brendan's papers?  as personal communication or whatever Brendan's preference is
-Now that we can compute the action of $\mathcal{A}^\ast(y)$, we can compute gradients and use existing first-order methods.  As an example, we consider a simulated underwater acoustic channel.  A single unknown real source signal is broadcast over two acoustic channels with unknown real impulse responses.  Additionally, zero mean Gaussian noise with standard deviation $0.005$ is added to each output signal.  We extend the blind channel estimation problem to two channels quite naturally:
+Now that we can compute the required gradients, we can use existing first-order methods.  As an example, we consider a simulated underwater acoustic channel.  A single unknown real source signal is broadcast over two acoustic channels with unknown real impulse responses.  Additionally, zero mean Gaussian noise with standard deviation $0.005$ is added to each output signal.  We extend the blind channel estimation problem to two channels quite naturally:
 
 \begin{align*}
    \min_{h_i,s} ~&\sum_{i=1}^2\left(\left\|\mathcal{A}(h_is^T) - x_i\right\|_2^2 + \lambda_{h}\|h_i\|_1\right) + \lambda_s\|s\|_1
@@ -460,7 +542,7 @@ Now that we can compute the action of $\mathcal{A}^\ast(y)$, we can compute grad
 %TODO how to cite Brendan's data?
 It is straightforward to include the ``soft'' TV term in the gradients, and we can use standard first-order algorithms to solve the augmented problem.  Brendan Rideout of the University of Hawai`i provided simulated data containing an impulsive source, two underwater acoustic channel impulse responses, and the two outputs of the underwater channels.  The simulation also added zero mean Gaussian noise with standard deviation $0.005$.  We used the two channel outputs to attempt to recover the impulsive source and channel impulse responses.\\
 
-We take $\lambda_h = 0.1$, $\lambda_s=0.01$, $\lambda_{h,\text{TV}}=0.01$, and $\delta=0.1$ for the Huber functions $L_\delta(\cdot)$.  We initialized $h_i$ and $s$ with zero mean Gaussian random numbers with unit standard deviation.  In practice, we may not know the true lengths of $h_i$ and $s$, $K$ and $N$, respectively.  We do know the length of the observed signals, which is $K+N-1$.  In this example, $K=894$ and $N=1717$, and we guess $K_\text{est}=794$ and $N_\text{est}=1817$.\footnote{This choice of $K_\text{est}$ and $N_\text{est}$ is not particularly special.  We chose these values because \texttt{x\_est} is not quite correct, but does show certain artifacts that would allow us to revise our estimates of $K_\text{est}$ and $N_\text{est}$.}  We used Mark Schmidt's software package L1General to solve the augmented problem (\ref{eq:bce_aug}) \cite{schmidt_2010}.\\
+We take $\lambda_h = 0.1$, $\lambda_s=0.01$, $\lambda_{h,\text{TV}}=0.01$, and $\delta=0.1$ for the Huber functions $L_\delta(\cdot)$.  We initialized $h_i$ and $s$ with zero mean Gaussian random numbers with unit standard deviation.  In practice, we may not know the true lengths of $h_i$ and $s$, $K$ and $N$, respectively.  We do know the length of the observed signals, which is $K+N-1$.  In this example, $K=894$ and $N=1717$, and we guess $K_\text{est}=794$ and $N_\text{est}=1817$.\footnote{This choice of $K_\text{est}$ and $N_\text{est}$ is not particularly special.  We chose these values because \texttt{x\_est} is not quite correct, but does show certain artifacts that would allow us to revise our estimates of $K_\text{est}$ and $N_\text{est}$.}  We used L1General to solve the augmented problem (\ref{eq:bce_aug}) \cite{schmidt_2010}.\\
 
 The results of the recovery are shown in Figure \ref{fig:bce_rec}.  We show the output and channel impulse response for only the first channel, as the second channel is similar.  Researchers studying the acoustic channel are mainly interested in the time delays between peaks and relative phase shifts.  Besides the overall magnitude ambiguity and time shift (which are inconsequential for acoustic channel estimation), peaks 7 and 8 have undergone a phase and time shift.  A careful observation of \texttt{x\_est} would lead us to revise our estimates of $K$ and $N$, which does lead to correctly estimating peaks 7 and 8.\\
 
@@ -477,6 +559,7 @@ The results of the recovery are shown in Figure \ref{fig:bce_rec}.  We show the 
 \end{figure}
 
 % ]]]
+
 
 
 \section{Discussion}
