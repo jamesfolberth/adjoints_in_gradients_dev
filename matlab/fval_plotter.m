@@ -1,7 +1,10 @@
 function [] = fval_plotter()
 
-fval();
+addpath('export_fig/');
+
+%fval();
 %psnr();
+ssim();
 
 end
 
@@ -52,5 +55,32 @@ set(gca, 'FontSize', 16);
 
 xlabel('Iteration');
 ylabel('PSNR');
+
+end
+
+function [] = ssim()
+
+savefile = 'resolution_bior4.4_sym_ssim.mat';
+
+S = load(savefile, 'fun_all_pinv', 'fun_all');
+fun_all_pinv = S.fun_all_pinv;
+fun_all = S.fun_all;
+
+iters = 1:length(fun_all_pinv);
+figure()
+clf();
+hold on;
+plot(iters, fun_all, 'LineWidth', 3);
+plot(iters, fun_all_pinv, '--', 'LineWidth', 3);
+hold off
+h = legend('true adjoint', 'pinv approx', 'Location', 'SouthEast');
+set(h, 'FontSize', 16);
+set(gca, 'FontSize', 16);
+
+xlabel('Iteration');
+ylabel('SSIM');
+
+%set(gcf, 'Color', 'w');
+%export_fig 'pinv_adjoint_SSIM_bior4.4_sym.pdf';
 
 end

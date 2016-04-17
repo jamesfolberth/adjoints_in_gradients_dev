@@ -33,7 +33,7 @@ Btrans = trans(Bobs);
 %lambda = 1e-4; % used in B+T's example code
 lambda = 2e-5; % used in FISTA SIAM paper
 
-pars.MAXITER=25; % do this many iterations
+pars.MAXITER=2500; % do this many iterations
 pars.fig=0; % suppress the figure while running FISTA
 %pars.BC='periodic';
 pars.B = 1; % TODO JMF need to look this up for CDF 9/7 wavelets
@@ -66,9 +66,9 @@ WSyAd = @(Y) wavelet_synthesis_adjoint_2d(Y, wname, dwname, extmode, levels, 'ad
 [Xout,fun_all,X_iter]=deblur_dwt_FISTA_trans_direct(Bobs,P,center,WAn,WSy,WSyAd,lambda,pars,X); %
 
 % run forever to get fstar
-pars_tmp = pars; pars_tmp.MAXITER = 2*pars.MAXITER;;
-[Xout_star,fun_all_star,X_iter]=deblur_dwt_FISTA_trans_direct(Bobs,P,center,WAn,WSy,WSyAd,lambda,pars_tmp,X);
-fstar = min(fun_all_star(:));
+%pars_tmp = pars; pars_tmp.MAXITER = 2*pars.MAXITER;
+%[Xout_star,fun_all_star,X_iter]=deblur_dwt_FISTA_trans_direct(Bobs,P,center,WAn,WSy,WSyAd,lambda,pars_tmp,X);
+%fstar = min(fun_all_star(:));
 
 % show the recovered image and some other info
 imwrite(Xout_pinv, 'deblurred_images/tmp_pinv.pgm');
@@ -97,8 +97,9 @@ imwrite(Xout, 'deblurred_images/tmp.pgm');
 %xlabel('Iteration');
 %ylabel('SSIM');
 
-save('resolution_bior4.4_sym_fval.mat', 'fun_all_pinv', 'fun_all', 'fun_all_star');
+%save('resolution_bior4.4_sym_fval.mat', 'fun_all_pinv', 'fun_all', 'fun_all_star');
 %save('resolution_bior4.4_sym_psnr.mat', 'fun_all_pinv', 'fun_all');
+save('resolution_bior4.4_sym_ssim.mat', 'fun_all_pinv', 'fun_all');
 %fval_plotter();
 
 end
