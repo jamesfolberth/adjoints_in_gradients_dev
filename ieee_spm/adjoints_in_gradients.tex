@@ -83,6 +83,7 @@ The gradient of the differentiable term $f(x)={\frac{1}{2}\|\mathcal{RW}x-b\|_2^
 %     Could cite personal communication with Gabriel Peyre.
 
 %TODO Hopefully Stephen can write this...
+%     Key idea is differentiable loss composed with linear operator
 Note that adjoints can appear in many other contexts.  The problem of minimizing $\ell(\mathcal{A}x,b)$, a loss function with a differentiable component, still requires the adjoint of $\mathcal{A}$ due to the chain rule.  For instance, $\ell(\mathcal{A}x,b) = f(\mathcal{A}x,b)+g(x)$ where $f(\mathcal{A}x,b)$ is convex and differentiable in $x$ and $g(x)$ is convex and nondifferentiable, is a rich model that is considered in \cite{beck_2009b}.\\
 
 % Here we try to briefly introduce the following sections.  
@@ -140,7 +141,7 @@ Another standard extension (at least in 1d) is the periodic extension.  Similar 
 \subsection{The adjoint for orthogonal wavelets}
 For orthogonal wavelets (e.g. Haar and more generally Daubechies wavelets), the adjoint $\mathcal{W}_\text{zpd}^\ast$ is exactly the analysis operator $\mathcal{W}_\text{zpd}^\dagger$.  For orthogonal wavelets with general boundary conditions, we can use the splitting (\ref{eq:wzpd_adjoint}) and implement $\left(\mathcal{E}^\dagger\right)^\ast$.\\
 
-For an example image, consider a standard resolution test chart, shown in Figure \ref{fig:original}.  We prescribe symmetric boundary conditions on the image, which will affect both $\mathcal{W}$, $\mathcal{R}$, and their adjoints.  Symmetric boundary conditions (compared to periodic or zero-padded boundary conditions) produce significantly fewer edge effects, and so are a natural choice.\\
+For an example image, consider a standard resolution test chart \cite{weber_1993}, shown in Figure \ref{fig:original}.  We prescribe symmetric boundary conditions on the image, which will affect both $\mathcal{W}$, $\mathcal{R}$, and their adjoints.  Symmetric boundary conditions (compared to periodic or zero-padded boundary conditions) produce significantly fewer edge effects, and so are a natural choice.\\
 
 Fortuitously, for orthogonal wavelets, the adjoint of $\mathcal{W}$ with symmetric boundary conditions is ``very close to'' the analysis operator $\mathcal{W}^\dagger$.  This fact is often used (e.g. \cite{beck_2009}), and as we can see from the splitting (\ref{eq:wzpd_adjoint}), the error is introduced through $\mathcal{E} \approx \left(\mathcal{E}^\dagger\right)^\ast$.  Again, by merely implementing $\left(\mathcal{E}^\dagger\right)^\ast$, we can use the true adjoint $\mathcal{W}^\ast$.\\
 
@@ -207,7 +208,7 @@ Let $y\in\reals^N$ be an arbitrary signal vector and $\{\phi_i\}_{i=1}^p$, $p\ge
                     &= \tilde{\Phi},
 \end{align*}
 
-\noindent where we have used various well-known properties of the pseudoinverse.  By splitting the wavelet operator into extension and wavelet transform with (orthonormal) zero-padding, the adjoint of wavelet reconstruction is dual wavelet analysis.  Note that in the case of orthogonal wavelets, $\Phi^\ast\Phi$ is the identity and the dual frame is identically the primal frame.  In Table \ref{tab:wave_relations} we summarize a few relationships between the primal and dual frames.\\
+\noindent where we have used various well-known properties of the pseudoinverse.  By splitting the wavelet operator into extension and wavelet transform with (orthonormal) zero-padding, the adjoint of wavelet reconstruction is dual wavelet analysis.  Note that in the case of orthogonal wavelets, $\Phi^\ast\Phi$ is the identity and the dual frame is identically the primal frame.  In Table \ref{tab:wave_relations} we summarize a few relationships between the primal and dual frames.  Note that $\Phi^\dagger\Phi=I$ but $\Phi\Phi^\dagger\neq I$ in general.\\
 
 \begin{table}[ht]
    \centering
@@ -251,7 +252,7 @@ Figure \ref{fig:adjoint_convergence} shows the structural similarity index \cite
 % [[[
 %Matched filter derivation: \cite{claerbout_1992}\\
 
-Another application where an interesting adjoint is involved in the gradient computation is in blind channel estimation.  In blind channel estimation, a single source sends an unknown signal over multiple channels with unknown response.  Observers collect the output of each channel and collectively attempt to determine the source signal and the channel impulse response from each channel.  Let $s$ be the unknown source signal of length $N$ and $h_i$ the channel impulse response of the $i$th channel, each of length $K$.  Then the output of the $i$th channel is
+Another application that depends on a fast adjoint in the gradient computation is in some formulations of blind channel estimation.  In blind channel estimation, a single source sends an unknown signal over multiple channels with unknown response.  Observers collect the output of each channel and collectively attempt to determine the source signal and the channel impulse response from each channel.  Let $s$ be the unknown source signal of length $N$ and $h_i$ the channel impulse response of the $i$th channel, each of length $K$.  Then the output of the $i$th channel is
 
 \[ x_i = h_i\ast s, \] 
 
@@ -261,17 +262,17 @@ For simplicity, assume we have a single channel $h$ with observed output $x$; we
 
 \[ \min_{h,s}~ \|h\ast s-x\|_2^2 + \lambda_h\|h\|_1 + \lambda_s \|s\|_1, \] 
 
-\noindent where we include the terms $\lambda_h\|h\|_1$ and $\lambda_s\|s\|_1$ to promote sparsity in the recovered signals.  To promote other structure in the recovered signals (assuming it is present in the true signals), we can include other terms, such as $\|h\|_{TV}$, the total-variation norm.  Note that since this problem involves $h\ast s$, it involves products of the problem variables and so is a non-convex problem.\\
+\noindent where we include the terms $\lambda_h\|h\|_1$ and $\lambda_s\|s\|_1$ to promote sparsity in the recovered signals.  To promote other structure in the recovered signals (assuming it is present in the unknown true signals), we can include other terms, such as $\|h\|_{TV}$, the 1d total-variation (TV) seminorm.  Note that since this problem involves $h\ast s$, it involves products of the problem variables and so it is a non-convex problem.\\
 
-Let $f(h,s)=\|h\ast s -x\|_2^2$ be the differentiable part of the objective.  First order methods require $\nabla_hf$ and $\nabla_sf$.  Note that when computing $\nabla_hf$, we hold $s$ fixed, and \emph{vice versa} for $\nabla_sf$.  Following \cite{claerbout_1992}, we may determine a fast method for evaluating these gradients.  To illustrate the derivation, consider the case $K=3$ and $N=5$.  Set $x_\text{est}=h\ast s$.  We can write the convolution as a matrix-vector product in a couple different ways.  The first,
+Let $f(h,s)=\|h\ast s -x\|_2^2$ be the differentiable part of the objective.  First order methods require $\nabla_hf$ and $\nabla_sf$.  Note that when computing $\nabla_hf$, we hold $s$ fixed, and \emph{vice versa} for $\nabla_sf$.  Using the results of \cite{claerbout_1992}, we may determine a fast method for evaluating these gradients.  To illustrate the derivation, consider the case $K=3$ and $N=5$.  Set $x_\text{est}=h\ast s$.  We can write the convolution as a matrix-vector product in a couple different ways.  The first,
 
 \[ x_\text{est} = \begin{bmatrix} h[0]\\h[1]&h[0]\\h[2]&h[1]&h[0]\\&h[2]&h[1]&h[0]\\&&h[2]&h[1]&h[0]\\&&&h[2]&h[1]\\&&&&h[2]\end{bmatrix}\begin{bmatrix}s[0]\\s[1]\\s[2]\\s[3]\\s[4]\end{bmatrix}, \] 
 
-\noindent puts $h$ in the matrix, and the second,
+\noindent forms the matrix with entries from $h$, and the second,
 
 \[ x_\text{est} = \begin{bmatrix} s[0]\\s[1]&s[0]\\s[2]&s[1]&s[0]\\s[3]&s[2]&s[1]\\s[4]&s[3]&s[2]\\&s[4]&s[3]\\&&s[4]\end{bmatrix}\begin{bmatrix}h[0]\\h[1]\\h[2]\end{bmatrix}, \] 
 
-\noindent puts $s$ in the matrix.  For the gradient $\nabla_hf$, we treat $s$ as a constant, and so it is natural to use the second matrix-vector product.  We have
+\noindent uses the entries of $s$ in the matrix.  For the gradient $\nabla_hf$, we treat $s$ as a constant, and so it is natural to use the second matrix-vector product.  We have
 
 \[ \nabla_hf = \nabla_h\|Sh-x\|^2 = S^\ast(Sh-x) = S^\ast r, \] 
 
@@ -283,15 +284,15 @@ Let $f(h,s)=\|h\ast s -x\|_2^2$ be the differentiable part of the objective.  Fi
 
 \[ \nabla_h f[n] = \sum_{k=0}^4 \bar{s}[k]r[k+n] = s[n]\star r[n] = \bar{s}[-n]\ast r[n], \]
 
-\noindent where $\bar{s}[-n]$ is the matched filter of $s$.  It is immediately apparent that we can compute $\nabla_hf$ efficiently via the FFT.  The derivation and computations for $\nabla_sf$ are the same.\\
+\noindent where $\bar{s}[-n]$ is the matched filter of $s$.  It is immediately apparent that we can compute $\nabla_hf$ efficiently via the FFT (if $s$ and $h$ are sufficiently long).  The derivation and computations for $\nabla_sf$ are the same.\\
 
-Now that we can compute the required gradients, we can use existing first-order methods.  As an example, we consider a simulated underwater acoustic channel.  A single unknown real source signal is broadcast over two acoustic channels with unknown real impulse responses.  Additionally, zero mean Gaussian noise with standard deviation $0.005$ is added to each output signal.  We extend the blind channel estimation problem to two channels quite naturally:
+Now that we can efficiently compute the required gradients, we can use existing first-order methods.  As an example, we consider a simulated underwater acoustic channel.  A single unknown real source signal is broadcast over two noisy acoustic channels with unknown real impulse responses.  We extend the blind channel estimation problem to two channels quite naturally:
 
 \begin{align*}
    \min_{h_i,s} ~&\sum_{i=1}^2\left(\left\|h_i\ast s - x_i\right\|_2^2 + \lambda_{h}\|h_i\|_1\right) + \lambda_s\|s\|_1
 \end{align*}
 
-\noindent Further, we may add a differentiable total-variation-like term.  The addition of a total-variation-like term may induce sharp transitions and stretches of nearly constant signal values (e.g. where the channel impulse response is constant for brief periods).  The true total-variation (TV) norm of $h$ may be computed as $\|\mathcal{D}h\|_1$, where $\mathcal{D}$ is the operator that subtracts consecutive pairs of elements of $h$: $\{\mathcal{D}h\}_j = h_{j+1} - h_j$.  We can in fact form $\mathcal{D}$ as a sparse matrix and compute $\mathcal{D}^\ast$ easily.  To ``soften'' the TV norm to a differentiable term, we may use the Huber function, defined as
+\noindent Further, we may add a differentiable 1d total-variation-like term in order to promote sharp transitions and stretches of nearly constant signal values (e.g. where the channel impulse response is constant for brief periods).  The true total-variation seminorm of $h$ may be computed as $\|\mathcal{D}h\|_1$, where $\mathcal{D}$ is the operator that subtracts consecutive pairs of elements of $h$: $\{\mathcal{D}h\}_j = h_{j+1} - h_j$.  We can in fact form $\mathcal{D}$ as a sparse matrix and compute $\mathcal{D}^\ast$ easily.  To ``soften'' the TV norm to a differentiable term, we may use the Huber function, defined as
 
 \[ L_\delta(z) = \left\{\begin{array}{ll} \frac{1}{2}z^2 & |z| \le \delta\\ \delta\left(|z| - \frac{1}{2}\delta\right) & |z| > \delta. \end{array}\right. \] 
 
@@ -305,9 +306,9 @@ Now that we can compute the required gradients, we can use existing first-order 
 
 It is straightforward to include the ``soft'' TV term in the gradients, and we can use standard first-order algorithms to solve the augmented problem.  Simulated data containing an impulsive source, two underwater acoustic channel impulse responses, and the two outputs of the underwater channels were provided by \cite{rideout_2016}.  The simulation also added zero mean Gaussian noise with standard deviation $0.005$.  We used the two channel outputs to attempt to recover the impulsive source and channel impulse responses.\\
 
-We take $\lambda_h = 0.1$, $\lambda_s=0.01$, $\lambda_{h,\text{TV}}=0.01$, and $\delta=0.1$ for the Huber functions $L_\delta(\cdot)$.  We initialized $h_i$ and $s$ with zero mean Gaussian random numbers with unit standard deviation.  In practice, we may not know the true lengths of $h_i$ and $s$, $K$ and $N$, respectively.  We do know the length of the observed signals, which is $K+N-1$.  In this example, $K=894$ and $N=1717$, and we guess $K_\text{est}=844$ and $N_\text{est}=1767$.  We used L1General to solve the augmented problem (\ref{eq:bce_aug}) \cite{schmidt_2010}.  The initial entries of $h_i$ and $s$ were drawn from the standard normal distribution.\\
+We take $\lambda_h = 0.1$, $\lambda_s=0.01$, $\lambda_{h,\text{TV}}=0.01$, and $\delta=0.1$ for the Huber functions $L_\delta(\cdot)$.  We initialized $h_i$ and $s$ with zero mean Gaussian random numbers with unit standard deviation.  In practice, we may not know the true lengths of $h_i$ and $s$, $K$ and $N$, respectively.  We do know the length of the observed signals, which is $K+N-1$.  In this example, $K=894$ and $N=1717$, and we guess $K_\text{est}=844$ and $N_\text{est}=1767$.  We used L1General \cite{schmidt_2010} to find a local solution of the augmented problem (\ref{eq:bce_aug}).  The initial entries of $h_i$ and $s$ were drawn from the standard normal distribution.\\
 
-The results of the recovery are shown in Figure \ref{fig:bce_rec}.  We show the output and channel impulse response for only the first channel; the second channel is similar.  Researchers studying the acoustic channel are mainly interested in the time delays between peaks and relative phase shifts\cite{rideout_2016}.  Besides the overall magnitude ambiguity and time shift, it appears we will be able to accurately estimate the time delays and phase shifts between the peaks of the channel response.
+The results of the recovery are shown in Figure \ref{fig:bce_rec}.  We show the output and channel impulse response for only the first channel; the second channel is similar.  Researchers studying the acoustic channel are mainly interested in the time delays between peaks and relative phase shifts \cite{rideout_2016}.  Besides the overall magnitude ambiguity and time shift, it appears we will be able to accurately estimate the time delays and phase shifts between the peaks of the channel response.
 
 \begin{figure}
    \centering
