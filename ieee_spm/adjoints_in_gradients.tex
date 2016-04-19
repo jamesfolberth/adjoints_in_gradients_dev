@@ -23,6 +23,8 @@
 \newcommand{\reals}{\mathbb{R}}
 \newcommand{\defeq}{\mathrel{\mathop:}=}
 
+\newcommand{\A}{\mathcal{A}}
+
 % Can use this to scale down big expressions.
 % http://tex.stackexchange.com/questions/43065/matrices-too-big-to-fit-the-width-of-a-page
 \newcommand\scalemath[2]{\scalebox{#1}{\mbox{\ensuremath{\displaystyle #2}}}}
@@ -34,7 +36,8 @@
 %    Let's try to find a title that is a bit more vague...
 %\title{Application of Adjoint Operators in Gradient Computations}
 %\title{Adjoint Operators in Image Deblurring and Blind Channel Estimation Problems}
-\title{Adjoint Operators in Image Deblurring and Blind Channel Estimation Problems}
+%\title{Adjoint Operators in Image Deblurring and Blind Channel Estimation Problems}
+\title{Efficient Adjoint Computation for Wavelet and Convolution Operators}
 \author{James~Folberth and 
         Stephen~Becker%
 \thanks{J. Folberth and S. Becker are with the Department
@@ -54,6 +57,12 @@ Boulder, CO, 80309 USA}}
 \subsection*{Prerequisites}
 The reader should be familiar with linear algebra, wavelets, and basic Fourier analysis.  Knowledge of first-order iterative optimization algorithms is beneficial for motivating need for a fast adjoint computation, but should not be necessary to understand the adjoint computation itself.\\
 
+\subsection*{Motivation}
+Many estimation problems are modeled using the composition of a differentiable loss $\ell$ with an affine map $x\mapsto\mathcal{A}x+b$, the simplest such examples being generalized linear models such as least-square data fitting. The gradient of $\ell \circ \A$ is given by the chain rule as $\mathcal{A}^* \nabla \ell( \A x + b)$. For small problems, $\A$ may be explicitly represented as a matrix and $\A^*$ calculated as the conjugate transpose of the matrix. 
+
+In contrast, larger problems are often carefully formulated to involve only linear operators $\A$ which have a fast transform (e.g., FFT, wavelet transform, convolution) and are therefore never explicitly stored as matrices.  While many software packages provide fast routines to compute $\A^{-1}$ or $\A^\dagger$, few packages include routines for $\A^*$.
+% Cite rice wavelet toolbox?
+The purpose of this note is to describe a few cases where one can compute the action of $\A^*$ with the sample complexity as applying $\A$. Boundary conditions play a confounding role in the calculation, and we present a simple framework to correctly take them into account.
 
 \section{Example 1: An Image Deblurring Problem}
 % [[[
@@ -82,9 +91,6 @@ The gradient of the differentiable term $f(x)={\frac{1}{2}\|\mathcal{RW}x-b\|_2^
 
 %     Could cite personal communication with Gabriel Peyre.
 
-%TODO Hopefully Stephen can write this...
-%     Key idea is differentiable loss composed with linear operator
-Note that adjoints can appear in many other contexts.  The problem of minimizing $\ell(\mathcal{A}x,b)$, a loss function with a differentiable component, still requires the adjoint of $\mathcal{A}$ due to the chain rule.  For instance, $\ell(\mathcal{A}x,b) = f(\mathcal{A}x,b)+g(x)$ where $f(\mathcal{A}x,b)$ is convex and differentiable in $x$ and $g(x)$ is convex and nondifferentiable, is a rich model that is considered in \cite{beck_2009b}.\\
 
 % Here we try to briefly introduce the following sections.  
 To derive the true adjoint, we first $\mathcal{W}$ into signal extension and wavelet transform.  We recall a few common signal extensions, consider the case of orthogonal wavelets, and then use a property of frames to construct the adjoint for biorthogonal wavelets.  It transpires that we only need to handle the signal extensions and may use existing software for the more complicated wavelet transforms.\\
