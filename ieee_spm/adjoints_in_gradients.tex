@@ -66,24 +66,21 @@ The purpose of this note is to describe a few cases where one can compute the ac
 
 \section{Example 1: An Image Deblurring Problem}
 % [[[
-Digital images can be blurred through a variety of means.  For example, the optical system can be out of focus and/or atmospheric turbulence can cause blurring of astronomical images.  The goal of image deblurring is to recover the original, sharp image by posing the blurring process in a mathematical model.\\
+Digital images can be blurred through a variety of means.  For example, the optical system can be out of focus and/or atmospheric turbulence can cause blurring of astronomical images.  The goal of image deblurring is to recover the original, sharp image. One class of techniques poses the deblurring problem  as an optimization problem, where the optimization variables are the wavelet coefficients of the recovered image.  We assume  that the blurring operator $\mathcal{R}$ is known. For instance, $\mathcal{R}$ could represent a Gaussian point spread function (PSF) under symmetric (reflexive) boundary conditions \cite{hansen_2006}. The blurring operator is usually singular or ill-conditioned.
 
-In this example, we use the formulation used in \cite{beck_2009}.  It is assumed that the blurring action is known, and the deblurring problem is posed as an optimization problem, where the optimization variables are the wavelet coefficients of the recovered image.  Let $\mathcal{R}$ be a known blurring operator.  For instance, $\mathcal{R}$ could represent a Gaussian point spread function (PSF) under symmetric (reflexive) boundary conditions \cite{hansen_2006}.  Again, this model assumes that we have a good model of the blurring operator.\\
-
-Let $\mathcal{W}$ represent a multi-level wavelet reconstruction operator with suitable boundary conditions, $b$ be the observed, blurry image, and $\mathcal{A}=\mathcal{RW}$ be the linear operator that synthesizes an image from wavelet coefficients $x$ and then blurs the synthesized image under the blurring operator $\mathcal{R}$.  The image deblurring task from \cite{beck_2009} is posed as an optimization problem where we seek to recover a few sparse wavelet coefficients that accurately reconstruct the blurred image:
+Let $\mathcal{W}$ represent a multi-level wavelet reconstruction operator with suitable boundary conditions, $b$ be the observed, blurry image, and $\mathcal{A}=\mathcal{RW}$ be the linear operator that synthesizes an image from wavelet coefficients $x$ and then blurs the synthesized image under the blurring operator $\mathcal{R}$.  In order to both regularize the problem and to take into account that many real-world images have a sparse wavelet representation, we solve the following standard model which seeks to recover a few sparse wavelet coefficients that accurately reconstruct the blurred image:
 
 \begin{equation}
 \label{eq:syn_problem}
-\min_x~ \dfrac{1}{2}\|\mathcal{RW}x-b\|_2^2 + \lambda \|x\|_1,
+\min_x~ \dfrac{1}{2}\|\mathcal{RW}x-b\|_2^2 + \lambda \|x\|_1, \quad \lambda>0.
 \end{equation}
-
-\noindent This formulation is sometimes called the synthesis formulation, since we synthesize an image $\mathcal{W}x$ from the wavelet coefficients in the optimization variable $x$.  We seek to find an $x$ that accurately reconstructs the blurred image $b$ while simultaneously has only a few nonzero entires.\\
+This formulation is sometimes called the synthesis formulation, since we synthesize an image $\mathcal{W}x$ from the wavelet coefficients in the optimization variable $x$, and is a commonly used model~\cite{beck_2009}.  We seek to find an $x$ that accurately reconstructs the blurred image $b$ while simultaneously having only a few nonzero entires.
 
 The gradient of the differentiable term $f(x)={\frac{1}{2}\|\mathcal{RW}x-b\|_2^2}$ is
 
 \[ \nabla f(x) = \mathcal{W}^\ast \mathcal{R}^\ast(\mathcal{RW}x-b). \] 
 
-\noindent In the case of a blurring PSF, we can apply $\mathcal{R}$ and $\mathcal{R}^\ast$ in $\mathcal{O}(N\log N)$ time in the Fourier domain via the FFT \cite{beck_2009, hansen_2006}.  Wavelet software packages (e.g. {\sc matlab} Wavelet Toolbox \cite{matlab_wt_2015}) implement discrete wavelet analysis and reconstruction in $\mathcal{O}(N)$ time; these operations correspond to $\mathcal{W}^\dagger$ and $\mathcal{W}$ (we use $\mathcal{W}^\dagger$ to denote the Moore-Penrose pseudoinverse of $\mathcal{W}$).  However, the adjoint wavelet transform is not implemented in software packages and is not expressly mentioned in the literature \cite{mallat_2009, daubechies_1992, strang_1996}.  A ``trick'' commonly used in practice is the ``pseudoinverse approximation'' $\mathcal{W}^\dagger\approx\mathcal{W}^\ast$, but we would like to find a way of computing the true adjoint of wavelet reconstruction (and analysis) in the same $\mathcal{O}(N)$ time. \\
+\noindent In the case of a blurring PSF, we can apply $\mathcal{R}$ and $\mathcal{R}^\ast$ in $\mathcal{O}(N\log N)$ time in the Fourier domain via the FFT \cite{beck_2009, hansen_2006}.  Wavelet software packages (e.g. {\sc matlab} Wavelet Toolbox \cite{matlab_wt_2015}) implement discrete wavelet analysis and reconstruction in $\mathcal{O}(N)$ time; these operations correspond to $\mathcal{W}^\dagger$ and $\mathcal{W}$ (we use $\mathcal{W}^\dagger$ to denote the Moore-Penrose pseudoinverse of $\mathcal{W}$).  However, the adjoint wavelet transform is not implemented in software packages and is not expressly mentioned in the literature \cite{mallat_2009, daubechies_1992, strang_1996}.  A ``trick'' commonly used in practice is the ``pseudoinverse approximation'' $\mathcal{W}^\dagger\approx\mathcal{W}^\ast$, but we would like to find a way of computing the true adjoint of wavelet reconstruction (and analysis) in the same $\mathcal{O}(N)$ time. 
 %     how do we cite "the adjoint transform is not discussed"?
 %     Look in wavelet books.  Could say it's not discussed in standard textbooks such as Mallat, etc.  Check recent books (Daubechies' text probably doesn't have it, because it's old).
 %     The adjoint of the frame operator is mentioned in chapter 3 of Daubechies' "Ten Lectures".  It's given more detail in mallat_2009.
@@ -93,7 +90,7 @@ The gradient of the differentiable term $f(x)={\frac{1}{2}\|\mathcal{RW}x-b\|_2^
 
 
 % Here we try to briefly introduce the following sections.  
-To derive the true adjoint, we first $\mathcal{W}$ into signal extension and wavelet transform.  We recall a few common signal extensions, consider the case of orthogonal wavelets, and then use a property of frames to construct the adjoint for biorthogonal wavelets.  It transpires that we only need to handle the signal extensions and may use existing software for the more complicated wavelet transforms.\\
+To derive the true adjoint, we first decompose $\mathcal{W}$ into signal extension and wavelet transform.  We recall a few common signal extensions, consider the case of orthogonal wavelets, and then use a property of frames to construct the adjoint for biorthogonal wavelets.  It transpires that we only need to implement the adjoint of the signal extensions and may use existing software for the more complicated wavelet transforms.
 
 \subsection{A few signal extensions}
 To implement a wavelet transform with boundary conditions, a popular method is to extend the given signal to satisfy the desired boundary conditions and then transform the extended signal; this is the approach used in {\sc matlab}'s Wavelet Toolbox \cite{matlab_wt_2015}.  If we let $\mathcal{E}$ be the desired extension operator and $\mathcal{W}^\dagger_\text{zpd}$ be the wavelet analysis operator for extended signals under zero boundary conditions, we can write wavelet analysis as 
@@ -116,9 +113,11 @@ Consider a $1$-dimensional signal $y[n]$, $n=0,...,N-1$.  \footnote{We consider 
 \mathcal{W}^\ast = \mathcal{W}_\text{zpd}^\ast\left(\mathcal{E}^\dagger\right)^\ast.
 \end{equation}
 
-\noindent The splitting in equation (\ref{eq:wzpd_adjoint}) allows us to correctly handle the adjoint extension ourselves.  It remains to implement $\left(\mathcal{E}^\dagger\right)^\ast$ and determine how to apply $\mathcal{W}^\ast_\text{zpd}$ with existing software.\\
+\noindent The splitting in equation (\ref{eq:wzpd_adjoint}) allows us to correctly handle the adjoint extension ourselves.  It remains to implement $\left(\mathcal{E}^\dagger\right)^\ast$ and determine how to apply $\mathcal{W}^\ast_\text{zpd}$ with existing software.
 
-Although the zero-padded extension is simple to work with, it is not usually a reasonable extension mode for practical applications.  A better extension mode is the half-point symmetric extension, which is the default extension mode in {\sc matlab}'s Wavelet Toolbox \cite{matlab_wt_2015}.  The double sided half-point symmetric extension reflects the signal about its boundaries in the following manner:
+%Although the zero-padded extension is simple to work with, it is not usually a reasonable extension mode for practical applications. 
+The zero-padded extension is not often used by itself since it can introduce boundary artifacts.
+ A better extension mode is the half-point symmetric extension, which is the default extension mode in {\sc matlab}'s Wavelet Toolbox \cite{matlab_wt_2015}.  The double sided half-point symmetric extension reflects the signal about its boundaries in the following manner:
 
 %TODO this is slightly too wide
 \[ \underbrace{y[L-1], ..., y[0]}_\text{Left extension}, y[0], ..., y[N-1], \underbrace{y[N-1], ..., y[N+L-2]}_\text{Right extension}. \] 
