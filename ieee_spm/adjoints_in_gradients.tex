@@ -12,6 +12,9 @@
 
 \usepackage{graphicx}
 
+\usepackage{color}
+\usepackage{import}
+
 %\usepackage{hyperref}
 
 \usepackage{parskip}
@@ -242,15 +245,20 @@ Another application that depends on a fast adjoint in the gradient computation i
 
 \[ x_i = h_i\ast s, \] 
 
-\noindent and will be of length $K+N-1$ (we use $\ast$ to denote a linear convolution).  We hope to recover the source $s$ and channel responses $h_i$ from the output signals $x_i$.   However, note that there is both a magnitude and phase ambiguity in $h_i$ and $s$, since we can multiply $h_i$ by $\alpha\neq 0$ and divide $s$ by $\alpha$, leaving $x_i$ unchanged.
+\noindent where $\ast$ denotes a linear convolution.  Here we prescribe zero-padded boundary conditions, and take $x_i$ to be the ``full'' convolution of length $K+N-1$.  We hope to recover the source $s$ and channel responses $h_i$ from the output signals $x_i$.   However, note that there is both a magnitude and phase ambiguity in $h_i$ and $s$, since we can multiply $h_i$ by $\alpha\neq 0$ and divide $s$ by $\alpha$, leaving $x_i$ unchanged.
 
 For simplicity, assume we have a single channel $h$ with observed output $x$; we will extend the problem to more channels in an example to follow.  We can pose the blind deconvolution problem for a single channel as
 
-\[ \min_{h,s}~ \|h\ast s-x\|_2^2 + \lambda_h\|h\|_1 + \lambda_s \|s\|_1, \] 
+\begin{equation}
+\label{eq:simple_bce_problem}
+\min_{h,s}~ \|h\ast s-x\|_2^2 + \lambda_h\|h\|_1 + \lambda_s \|s\|_1,
+\end{equation}
 
-\noindent where we include the terms $\lambda_h\|h\|_1$ and $\lambda_s\|s\|_1$ to promote sparsity in the recovered signals.  To promote other structure in the recovered signals (assuming it is present in the unknown true signals), we can include other terms, such as $\|h\|_{TV}$, the 1d total-variation (TV) seminorm.  Note that since this problem involves $h\ast s$, it involves products of the problem variables and so it is a non-convex problem.
+\noindent where we include the terms $\lambda_h\|h\|_1$ and $\lambda_s\|s\|_1$ to promote sparsity in the recovered signals.  To promote other structure in the recovered signals (assuming it is present in the unknown true signals), we can include other terms, such as $\|h\|_{TV}$, the 1d total-variation (TV) seminorm.
 
-Let $f(h,s)=\|h\ast s -x\|_2^2$ be the differentiable part of the objective.  First order methods require $\nabla_hf$ and $\nabla_sf$.  Note that when computing $\nabla_hf$, we hold $s$ fixed, and \emph{vice versa} for $\nabla_sf$.  Using the results of \cite{claerbout_1992}, we may determine a fast method for evaluating these gradients.  To illustrate the derivation, consider the case $K=3$ and $N=5$.  Set $x_\text{est}=h\ast s$.  We can write the convolution as a matrix-vector product in a couple different ways.  The first,
+Since (\ref{eq:simple_bce_problem}) involves $h\ast s$, it involves products of the problem variables and so it is a non-convex problem.  However, note that the outer product matrix $hs^T$ contains all of the terms used in the computation of the convolution $h\ast s$.  Indeed, we may define a \emph{linear} operator on $\mathcal{A}(hs^T)$ that computes the convolution: $\mathcal{A}(hs^T)=h\ast s$ \cite{ahmed_2013}.  Of course this is still a nonlinear operation, but the nonlinear operation is confined to the outer product $hs^T$.  In the following gradient computations, we will implicitly be computing the adjoint $\mathcal{A}^\ast$.
+
+Let $f(h,s)=\|h\ast s -x\|_2^2$ be the differentiable part of the objective.  First order methods require $\nabla_hf$ and $\nabla_sf$.  Note that when computing $\nabla_hf$, we hold $s$ fixed, and in doing so we may view the convolution $h\ast s$ as a linear operation on $h$.  Similarly, when computing $\nabla_s f$, we hold $h$ fixed.  Using the results of \cite{claerbout_1992}, we may determine a fast method for evaluating these gradients.  To illustrate the derivation, consider the case $K=3$ and $N=5$.  Set $x_\text{est}=h\ast s$.  We can write the convolution as a matrix-vector product in a couple different ways.  The first,
 
 \[ x_\text{est} = \begin{bmatrix} h[0]\\h[1]&h[0]\\h[2]&h[1]&h[0]\\&h[2]&h[1]&h[0]\\&&h[2]&h[1]&h[0]\\&&&h[2]&h[1]\\&&&&h[2]\end{bmatrix}\begin{bmatrix}s[0]\\s[1]\\s[2]\\s[3]\\s[4]\end{bmatrix}, \] 
 
@@ -258,7 +266,15 @@ Let $f(h,s)=\|h\ast s -x\|_2^2$ be the differentiable part of the objective.  Fi
 
 \[ x_\text{est} = \begin{bmatrix} s[0]\\s[1]&s[0]\\s[2]&s[1]&s[0]\\s[3]&s[2]&s[1]\\s[4]&s[3]&s[2]\\&s[4]&s[3]\\&&s[4]\end{bmatrix}\begin{bmatrix}h[0]\\h[1]\\h[2]\end{bmatrix}, \] 
 
-\noindent uses the entries of $s$ in the matrix.  For the gradient $\nabla_hf$, we treat $s$ as a constant, and so it is natural to use the second matrix-vector product.  We have
+\noindent uses the entries of $s$ in the matrix.  Note that here $h\ast s$ computes the ``full'' convolution, which includes using the zero-padded boundaries.  In {\sc matlab} we can compute the convolution with the \verb|conv| function:
+
+%TODO use verb or listing?  Sometimes lstlisting messes up the apostrophes (or maybe its evince).
+%TODO How do we end this sentence?  I don't want to add a period and have it look like code.
+\begin{verb}
+   x_est = conv(h, s, 'full')
+\end{verb}
+
+For the gradient $\nabla_hf$, we treat $s$ as a constant, and so it is natural to use the second matrix-vector product where we use the entries of $s$ to form the linear operator.  We have
 
 \[ \nabla_hf = \nabla_h\|Sh-x\|^2 = S^\ast(Sh-x) = S^\ast r, \] 
 
@@ -268,9 +284,15 @@ Let $f(h,s)=\|h\ast s -x\|_2^2$ be the differentiable part of the objective.  Fi
 
 \noindent We recognize this as the cross-correlation between $s$ and $r$:
 
-\[ \nabla_h f[n] = \sum_{k=0}^4 \bar{s}[k]r[k+n] = s[n]\star r[n] = \bar{s}[-n]\ast r[n], \]
+\[ \nabla_h f[n] = \sum_{k=0}^4 \bar{s}[k]r[k+n] = (\bar{s}[-\cdot]\ast r[\cdot])[n], \]
 
-\noindent where $\bar{s}[-n]$ is the matched filter of $s$.  It is immediately apparent that we can compute $\nabla_hf$ efficiently via the FFT (if $s$ and $h$ are sufficiently long).  The derivation and computations for $\nabla_sf$ are the same.
+\noindent where $\bar{s}[-\cdot]$ is the matched filter of $s[\cdot]$.  Note that the convolution here does not include the entries that use the zero-padded boundaries.  In {\sc matlab}, we can compute this convolution with
+
+\begin{verb}
+   Dfh = conv(r, conj(s(end:-1:1)), 'valid')
+\end{verb}
+
+\noindent The derivation and computations for $\nabla_sf$ are the very similar.
 
 Now that we can efficiently compute the required gradients, we can use existing first-order methods.  As an example, we consider a simulated underwater acoustic channel.  A single unknown real source signal is broadcast over two noisy acoustic channels with unknown real impulse responses.  We extend the blind channel estimation problem to two channels quite naturally:
 
@@ -282,24 +304,30 @@ Now that we can efficiently compute the required gradients, we can use existing 
 
 \[ L_\delta(z) = \left\{\begin{array}{ll} \frac{1}{2}z^2 & |z| \le \delta\\ \delta\left(|z| - \frac{1}{2}\delta\right) & |z| > \delta. \end{array}\right. \] 
 
-\noindent The Huber function is commonly used in regression with outliers, as it is linear for $|z|>\delta$, and so it is less sensitive to outliers.  Unlike $\|\cdot\|_1$, the Huber function is differentiable for all $z$.  We can approximate the TV norm with ${\|h\|_\text{TV} \defeq\|\mathcal{D}h\|_1 \approx L_\delta(\mathcal{D}h)/\delta}$.  The augmented problem, with the differentiable total-variation-like term is
+\noindent The Huber function is commonly used in regression with outliers, as it is linear for $|z|>\delta$, and so it is less sensitive to outliers.  Unlike ${\|\cdot\|_1}$, the Huber function is differentiable for all $z$.  We can approximate the TV norm with ${\|h\|_\text{TV} \defeq\|\mathcal{D}h\|_1 \approx L_\delta(\mathcal{D}h)/\delta}$.  The augmented problem, with the differentiable total-variation-like term is
 
 \begin{align}
    \label{eq:bce_aug}
-   f(h_i,s) &= \|h_i\ast s - x_i\|_2^2 + \lambda_{h,\text{TV}}L_\delta(\mathcal{D}h_i)/\delta,\nonumber\\
-   \min_{h_i,s} ~&\sum_{i=1}^2\left(f(h_i,s) + \lambda_h\|h_i\|_1\right) + \lambda_s\|s\|_1.
+   f_\delta(h_i,s) &= \|h_i\ast s - x_i\|_2^2 + \lambda_{h,\text{TV}}L_\delta(\mathcal{D}h_i)/\delta,\nonumber\\
+   \min_{h_i,s} ~&\sum_{i=1}^2\left(f_\delta(h_i,s) + \lambda_h\|h_i\|_1\right) + \lambda_s\|s\|_1.
 \end{align}
 
 It is straightforward to include the ``soft'' TV term in the gradients, and we can use standard first-order algorithms to solve the augmented problem.  Simulated data containing an impulsive source, two underwater acoustic channel impulse responses, and the two outputs of the underwater channels were provided by \cite{rideout_2016}.  The simulation also added zero mean Gaussian noise with standard deviation $0.005$.  We used the two channel outputs to attempt to recover the impulsive source and channel impulse responses.
 
 We take $\lambda_h = 0.1$, $\lambda_s=0.01$, $\lambda_{h,\text{TV}}=0.01$, and $\delta=0.1$ for the Huber functions $L_\delta(\cdot)$.  We initialized $h_i$ and $s$ with zero mean Gaussian random numbers with unit standard deviation.  In practice, we may not know the true lengths of $h_i$ and $s$, $K$ and $N$, respectively.  We do know the length of the observed signals, which is $K+N-1$.  In this example, $K=894$ and $N=1717$, and we guess $K_\text{est}=844$ and $N_\text{est}=1767$.  We used L1General \cite{schmidt_2010} to find a local solution of the augmented problem (\ref{eq:bce_aug}).  The initial entries of $h_i$ and $s$ were drawn from the standard normal distribution.
 
-The results of the recovery are shown in Figure \ref{fig:bce_rec}.  We show the output and channel impulse response for only the first channel; the second channel is similar.  Researchers studying the acoustic channel are mainly interested in the time delays between peaks and relative phase shifts \cite{rideout_2016}.  Besides the overall magnitude ambiguity and time shift, it appears we will be able to accurately estimate the time delays and phase shifts between the peaks of the channel response.
+The results of the recovery are shown in Figure \ref{fig:bce_rec}.  We show the output and channel impulse response for only the first channel; the second channel is similar.  Researchers studying the acoustic channel are mainly interested in the time delays between peaks and relative phase shifts \cite{rideout_2016}.  Besides the overall magnitude ambiguity and time shift, it appears we can accurately estimate the time delays and phase shifts between the peaks of the channel response.
 
 \begin{figure}
    \centering
    \includegraphics[width=0.5\textwidth]{figures/bce_rec_004_x_trim.pdf}
-   \includegraphics[width=0.5\textwidth]{figures/bce_rec_004_h_trim.pdf}
+   
+   \includegraphics[width=0.5\textwidth]{figures/bce_rec_004_h_trim_annotated.pdf}
+   %TODO We could try to use Inkscape again.  Its TeX output has some bugs...
+   %\def\svgwidth{0.5\textwidth}
+   %%\import{figures}{bce_rec_004_h_trim_annotated.pdf_tex}
+   %\input{bce_rec_004_h_trim_annotated.pdf_tex}
+   
    \includegraphics[width=0.5\textwidth]{figures/bce_rec_004_s_trim.pdf}
    \caption{Blind channel estimation via problem (\ref{eq:bce_aug}) for a simulated underwater acoustic impulsive source.  Shown are the true and estimated first channel output, first channel impulse response, and source.  There are obvious magnitude and time shift differences, but the estimated channel output and channel impulse response are remarkably similar in structure and potentially useful for studying the underwater channel.}
    \label{fig:bce_rec}
@@ -310,9 +338,9 @@ The results of the recovery are shown in Figure \ref{fig:bce_rec}.  We show the 
 
 \section{Discussion}
 % [[[
-We have demonstrated a framework for computing the adjoint of discrete wavelet transforms, which arise in gradient computations in optimization problems.  The framework separates the action of the wavelet transform and the signal extension operator.  The half-point symmetric extension is a common choice and we have provided its transpose, but other extension operators can readily be cast into the framework.  For many practical purposes, however, it appears that the adjoint operator is remarkably close to the pseudoinverse transform, which requires almost zero extra work for the programmer.
+We have demonstrated a framework for computing the adjoint of discrete wavelet transforms, which arise in gradient computations in optimization problems.  The framework separates the action of the wavelet transform and the signal extension operator.  The half-point symmetric extension is a common choice and we have provided its transpose, but other extension operators can readily be cast into the framework.  For many practical purposes, it appears that the adjoint operator is remarkably close to the pseudoinverse transform, however, implementing the true adjoint is effectively a simple matter of handling the signal extension operation.
 
-Another interesting operator and its adjoint appear in a blind channel estimation optimization problem.  A few linear algebraic tricks are used to arrive at a fast implementation of the adjoint operator.  For an impulsive source sent through a simulated underwater acoustic channel, the optimization problem is able to recover a slightly modified version of the true signals.
+Another interesting adjoint appears in a blind channel estimation optimization problem.  The convolution of two problem variables, which is a nonlinear operation, can be written as a matrix-vector product in two ways.  With this viewpoint, deriving the gradient becomes simple and a fast implementation is immediate.  For an impulsive source sent through a simulated underwater acoustic channel, the blind channel estimation problem is able to accurately recover important details of the acoustic channel response.
 
 % ]]]
 
