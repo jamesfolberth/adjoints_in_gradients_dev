@@ -25,6 +25,8 @@
 \newcommand{\defeq}{\mathrel{\mathop:}=}
 
 \newcommand{\A}{\mathcal{A}}
+\newcommand{\dual}{\widetilde}
+%\renewcommand{\phi}{\varphi}
 
 % Can use this to scale down big expressions.
 % http://tex.stackexchange.com/questions/43065/matrices-too-big-to-fit-the-width-of-a-page
@@ -73,13 +75,13 @@ Let $\mathcal{W}$ represent a multi-level wavelet reconstruction operator with s
 \end{equation}
 This commonly used formulation \cite{beck_2009} is sometimes called the synthesis formulation, since we reconstruct an image $\mathcal{W}x$ from the wavelet coefficients in the optimization variable $x$.  We seek to find an $x$ that accurately reconstructs the blurred image $b$ while simultaneously having only a few nonzero entires.
 
-To clarify our notation, suppose we have an image $y$.  In terms of the wavelet reconstruction operator $\mathcal{W}$, we compute the wavelet coefficients of $y$ with $x=\mathcal{W}^\dagger y$, which corresponds to wavelet analysis.  In each case, $\mathcal{W}$ and $\mathcal{W}^\dagger$ implicitly impose and handle the boundary conditions we impose on $y$ (e.g., zero, periodic, symmetric).
+To clarify our notation, suppose we have an image $b$.  In terms of the wavelet reconstruction operator $\mathcal{W}$, we compute the wavelet coefficients of $b$ with $x=\mathcal{W}^\dagger b$, which corresponds to wavelet analysis.  In each case, $\mathcal{W}$ and $\mathcal{W}^\dagger$ implicitly impose and handle the boundary conditions we impose on $b$ (e.g., zero, periodic, symmetric).
 
 The gradient of the differentiable term $f(x)={\frac{1}{2}\|\mathcal{RW}x-b\|_2^2}$ is
 
 \[ \nabla f(x) = \mathcal{W}^\ast \mathcal{R}^\ast(\mathcal{RW}x-b). \] 
 
-\noindent In the case of a blurring PSF, we can apply $\mathcal{R}$ and $\mathcal{R}^\ast$ in $\mathcal{O}(N\log N)$ time in the Fourier domain via the FFT \cite{beck_2009, hansen_2006}.  Wavelet software packages (e.g., {\sc matlab} Wavelet Toolbox \cite{matlab_wt_2015}) implement discrete wavelet analysis and reconstruction in $\mathcal{O}(N)$ time; these operations correspond to $\mathcal{W}^\dagger$ and $\mathcal{W}$.  However, the adjoint of wavelet reconstruction $\mathcal{W}^\ast$ is not implemented in software packages and is not expressly mentioned in the literature \cite{mallat_2009, daubechies_1992, strang_1996}.  A ``trick'' commonly used in practice is the ``pseudoinverse approximation'' $\mathcal{W}^\dagger\approx\mathcal{W}^\ast$, but we would like to find a way of computing the true adjoint of wavelet reconstruction (and analysis) in the same $\mathcal{O}(N)$ time. 
+\noindent In the case of a blurring PSF, we can apply $\mathcal{R}$ and $\mathcal{R}^\ast$ in $\mathcal{O}(N\log N)$ time in the Fourier domain via the FFT \cite{beck_2009, hansen_2006}.  Wavelet software packages (e.g., {\sc matlab} Wavelet Toolbox \cite{matlab_wt_2015}) implement discrete wavelet analysis and reconstruction in $\mathcal{O}(N)$ time; these operations correspond to $\mathcal{W}^\dagger$ and $\mathcal{W}$.  However, the adjoint of wavelet reconstruction, $\mathcal{W}^\ast$, is not implemented in software packages and is not expressly mentioned in the literature \cite{mallat_2009, daubechies_1992, strang_1996}.  A ``trick'' commonly used in practice is the ``pseudoinverse approximation'' $\mathcal{W}^\dagger\approx\mathcal{W}^\ast$, but we would like to find a way of computing the true adjoint of wavelet reconstruction (and analysis) in the same $\mathcal{O}(N)$ time. 
 %     how do we cite "the adjoint transform is not discussed"?
 %     Look in wavelet books.  Could say it's not discussed in standard textbooks such as Mallat, etc.  Check recent books (Daubechies' text probably doesn't have it, because it's old).
 %     The adjoint of the frame operator is mentioned in chapter 3 of Daubechies' "Ten Lectures".  It's given more detail in mallat_2009.
@@ -180,13 +182,13 @@ Let $y\in\reals^N$ be an arbitrary signal vector and $\{\phi_i\}_{i=1}^p$, $p\ge
    
    The product $\Phi u$ computes the expansion coefficients of the signal ${u\in\reals^N}$ in the frame $\{\phi_i\}$.  The frame synthesis operator $\Phi^\ast$ constructs a vector in $\reals^N$ given some expansion coefficients.  Since $\{\phi_i\}$ is assumed to be a frame, $\Phi^\ast\Phi$ is invertible and we may define the Moore-Penrose pseudoinverse $\Phi^\dagger$, which implements reconstruction in the frame as $\Phi^\dagger=\left(\Phi^\ast\Phi\right)^{-1}\Phi$.
 
-   A dual frame can be associated with a (primal) frame by defining the dual frame vectors $\tilde{\phi}_i = \left(\Phi^\ast\Phi\right)^{-1}\phi_i$ for $i=1,...,p$.  We may define analogously the dual frame analysis operator $\tilde{\Phi}$ and dual frame synthesis operator $\tilde{\Phi}^\ast$.
+   A dual frame can be associated with a (primal) frame by defining the dual frame vectors $\dual{\phi}_i = \left(\Phi^\ast\Phi\right)^{-1}\phi_i$ for $i=1,...,p$.  We may define analogously the dual frame analysis operator $\dual{\Phi}$ and dual frame synthesis operator $\dual{\Phi}^\ast$.
 
-   \noindent A fundamental relationship between primal and dual frame operators is $\tilde{\Phi}^\ast = \Phi^\dagger$ (see \cite{mallat_2009}, Theorem 5.5).  We can directly relate the frame operators and the wavelet operators under zero-padded boundary conditions.  We can write zero-padded wavelet reconstruction as frame reconstruction: $\mathcal{W}_\text{zpd}=\Phi^\dagger$.  Then using the above frame relations, we have
+   \noindent A fundamental relationship between primal and dual frame operators is $\dual{\Phi}^\ast = \Phi^\dagger$ (see \cite{mallat_2009}, Theorem 5.5).  We can directly relate the frame operators and the wavelet operators under zero-padded boundary conditions.  We can write zero-padded wavelet reconstruction as frame reconstruction: $\mathcal{W}_\text{zpd}=\Phi^\dagger$.  Then using the above frame relations, we have
 
    \begin{equation}
       \label{eq:wave_dual_frame}
-      \mathcal{W}_\text{zpd}^\ast = \left(\Phi^\dagger\right)^\ast = \left(\Phi^\ast\right)^\dagger = \tilde{\Phi}.
+      \mathcal{W}_\text{zpd}^\ast = \left(\Phi^\dagger\right)^\ast = \left(\Phi^\ast\right)^\dagger = \dual{\Phi}.
    \end{equation}
 
 \begin{table}[ht]
@@ -195,19 +197,19 @@ Let $y\in\reals^N$ be an arbitrary signal vector and $\{\phi_i\}_{i=1}^p$, $p\ge
    \label{tab:frame_relations}
    \begin{tabular}{lll}
       &Primal frame&Dual frame\\\hline\\[-0.5em]
-      Analysis & $\Phi = \mathcal{W}_\text{zpd}^\dagger$ & $\tilde{\Phi}=\left(\Phi^\dagger\right)^\ast$\\\\[-0.5em]
-      Synthesis & $\Phi^\ast = \left(\mathcal{W}_\text{zpd}^\dagger\right)^\ast$ & $\tilde{\Phi}^\ast = \Phi^\dagger$ \\\\[-0.5em]
-      Reconstruction & $\Phi^\dagger = \mathcal{W}_\text{zpd}$ & $\tilde{\Phi}^\dagger = \Phi^\ast$
+      Analysis & $\Phi = \mathcal{W}_\text{zpd}^\dagger$ & $\dual{\Phi}=\left(\Phi^\dagger\right)^\ast$\\\\[-0.5em]
+      Synthesis & $\Phi^\ast = \left(\mathcal{W}_\text{zpd}^\dagger\right)^\ast$ & $\dual{\Phi}^\ast = \Phi^\dagger$ \\\\[-0.5em]
+      Reconstruction & $\Phi^\dagger = \mathcal{W}_\text{zpd}$ & $\dual{\Phi}^\dagger = \Phi^\ast$
    \end{tabular}
 \end{table}
 
    \noindent We present other relationships between the primal and dual frames in Tabel \ref{tab:frame_relations}.  Note that $\Phi^\dagger\Phi=I$ but $\Phi\Phi^\dagger\neq I$ in general.
 
-   In (\ref{eq:wave_dual_frame}) we have $\mathcal{W}_\text{zpd}^\ast$ in terms of dual frame analysis.  For biorthogonal wavelets, dual frame analysis corresponds to wavelet analysis with the dual wavelets, which has a fast transform and is typically implemented together with the primal wavelets \cite{matlab_wt_2015}.  Ffor biorthogonal (and orthogonal) wavelets, this states$\mathcal{W}^\ast_\text{zpd}=\tilde{\mathcal{W}}_\text{zpd}^\dagger$, the latter of which is standard and has a fast implementation.  Combining this with the signal extension operator, we finally find
+   In (\ref{eq:wave_dual_frame}) we have $\mathcal{W}_\text{zpd}^\ast$ in terms of dual frame analysis.  For biorthogonal wavelets, dual frame analysis corresponds to wavelet analysis with the dual wavelets, which has a fast transform and is typically implemented together with the primal wavelets \cite{matlab_wt_2015}.  For biorthogonal (and orthogonal) wavelets, this states $\mathcal{W}^\ast_\text{zpd}=\dual{\mathcal{W}}_\text{zpd}^\dagger$, the latter of which is standard and has a fast implementation.  Combining this with the signal extension operator, we finally find
 
    \begin{equation}
    \label{eq:full_wave_adjoint}
-      \mathcal{W}^\ast = \mathcal{W}_\text{zpd}^\ast\left(\mathcal{E}^\dagger\right)^\ast = \tilde{\mathcal{W}}_\text{zpd}^\dagger\left(\mathcal{E}^\dagger\right)^\ast.
+      \mathcal{W}^\ast = \mathcal{W}_\text{zpd}^\ast\left(\mathcal{E}^\dagger\right)^\ast = \dual{\mathcal{W}}_\text{zpd}^\dagger\left(\mathcal{E}^\dagger\right)^\ast.
    \end{equation}
    
    \noindent From this we see that with a complete wavelet software library, one only needs to implement $(\mathcal{E}^\dagger)^\ast$ to use the true adjoint instead of the approximation $\mathcal{W}^\ast\approx\mathcal{W}^\dagger$.
@@ -241,7 +243,7 @@ Figure \ref{fig:adjoint_convergence} shows the structural similarity index \cite
 % [[[
 %Matched filter derivation: \cite{claerbout_1992}\\
 
-Another application that depends on a fast adjoint in the gradient computation is in some formulations of blind channel estimation.  In blind channel estimation, a single source sends an unknown signal over multiple channels with unknown response.  Observers collect the output of each channel and collectively attempt to determine the source signal and the channel impulse response from each channel.  Let $s$ be the unknown source signal of length $N$ and $h_i$ the channel impulse response of the $i$th channel, each of length $K$.  Then the output of the $i$th channel is
+Another application that depends on a fast adjoint in the gradient computation is in some formulations of blind channel estimation.  In blind channel estimation, a single source sends an unknown signal over multiple channels with unknown response.  Observers collect the output of each channel and collectively attempt to determine the source signal and the channel impulse response from each channel.  Let $s$ be the unknown source signal of length $N$ and $h_i$ the channel impulse response of the $i^\text{th}$ channel, each of length $K$.  Then the output of the $i^\text{th}$ channel is
 
 \[ x_i = h_i\ast s, \] 
 
@@ -251,32 +253,33 @@ For simplicity, assume we have a single channel $h$ with observed output $x$; we
 
 \begin{equation}
 \label{eq:simple_bce_problem}
-\min_{h,s}~ \|h\ast s-x\|_2^2 + \lambda_h\|h\|_1 + \lambda_s \|s\|_1,
+\min_{h,s}~ \frac{1}{2}\|h\ast s-x\|_2^2 + \lambda_h\|h\|_1 + \lambda_s \|s\|_1,
 \end{equation}
 
-\noindent where we include the terms $\lambda_h\|h\|_1$ and $\lambda_s\|s\|_1$ to promote sparsity in the recovered signals.  To promote other structure in the recovered signals (assuming it is present in the unknown true signals), we can include other terms, such as $\|h\|_{TV}$, the 1d total-variation (TV) seminorm.
+\noindent where we include the terms $\lambda_h\|h\|_1$ and $\lambda_s\|s\|_1$ to promote sparsity in the recovered signals.  To promote other structure in the recovered signals (assuming it is present in the unknown true signals), we can include other terms, such as $\|h\|_\text{TV}$, the 1d total-variation (TV) seminorm.
 
 Since (\ref{eq:simple_bce_problem}) involves $h\ast s$, it involves products of the problem variables and so it is a non-convex problem.  However, note that the outer product matrix $hs^T$ contains all of the terms used in the computation of the convolution $h\ast s$.  Indeed, we may define a \emph{linear} operator on $\mathcal{A}(hs^T)$ that computes the convolution: $\mathcal{A}(hs^T)=h\ast s$ \cite{ahmed_2013}.  Of course this is still a nonlinear operation, but the nonlinear operation is confined to the outer product $hs^T$.  In the following gradient computations, we will implicitly be computing the adjoint $\mathcal{A}^\ast$.
 
-Let $f(h,s)=\|h\ast s -x\|_2^2$ be the differentiable part of the objective.  First order methods require $\nabla_hf$ and $\nabla_sf$.  Note that when computing $\nabla_hf$, we hold $s$ fixed, and in doing so we may view the convolution $h\ast s$ as a linear operation on $h$.  Similarly, when computing $\nabla_s f$, we hold $h$ fixed.  Using the results of \cite{claerbout_1992}, we may determine a fast method for evaluating these gradients.  To illustrate the derivation, consider the case $K=3$ and $N=5$.  Set $x_\text{est}=h\ast s$.  We can write the convolution as a matrix-vector product in a couple different ways.  The first,
+Let $f(h,s)=\frac{1}{2}\|h\ast s -x\|_2^2$ be the differentiable part of the objective.  First order methods require $\nabla_hf$ and $\nabla_sf$.  Note that when computing $\nabla_hf$, we hold $s$ fixed, and in doing so we may view the convolution $h\ast s$ as a linear operation on $h$.  Similarly, when computing $\nabla_s f$, we hold $h$ fixed.  Using the results of \cite{claerbout_1992}, we may determine a fast method for evaluating these gradients.  To illustrate the derivation, consider the case $K=3$ and $N=5$.  Set $x_\text{est}=h\ast s$.  We can write the convolution as a matrix-vector product in a couple different ways.  The first,
 
 \[ x_\text{est} = \begin{bmatrix} h[0]\\h[1]&h[0]\\h[2]&h[1]&h[0]\\&h[2]&h[1]&h[0]\\&&h[2]&h[1]&h[0]\\&&&h[2]&h[1]\\&&&&h[2]\end{bmatrix}\begin{bmatrix}s[0]\\s[1]\\s[2]\\s[3]\\s[4]\end{bmatrix}, \] 
 
 \noindent forms the matrix with entries from $h$, and the second,
 
-\[ x_\text{est} = \begin{bmatrix} s[0]\\s[1]&s[0]\\s[2]&s[1]&s[0]\\s[3]&s[2]&s[1]\\s[4]&s[3]&s[2]\\&s[4]&s[3]\\&&s[4]\end{bmatrix}\begin{bmatrix}h[0]\\h[1]\\h[2]\end{bmatrix}, \] 
+\[ x_\text{est} = \begin{bmatrix} s[0]\\s[1]&s[0]\\s[2]&s[1]&s[0]\\s[3]&s[2]&s[1]\\s[4]&s[3]&s[2]\\&s[4]&s[3]\\&&s[4]\end{bmatrix}\begin{bmatrix}h[0]\\h[1]\\h[2]\end{bmatrix}
+= S\, h, \] 
 
-\noindent uses the entries of $s$ in the matrix.  Note that here $h\ast s$ computes the ``full'' convolution, which includes using the zero-padded boundaries.  In {\sc matlab} we can compute the convolution with the \verb|conv| function:
+\noindent uses the entries of $s$ in the matrix $S$.  Note that here $h\ast s$ computes the ``full'' convolution, which includes using the zero-padded boundaries.  In {\sc matlab} we can compute the convolution with the \verb|conv| function:
 
 %TODO use verb or listing?  Sometimes lstlisting messes up the apostrophes (or maybe its evince).
 %TODO How do we end this sentence?  I don't want to add a period and have it look like code.
 \begin{verb}
-   x_est = conv(h, s, 'full')
+  x_est = conv(h, s, 'full')
 \end{verb}
 
 For the gradient $\nabla_hf$, we treat $s$ as a constant, and so it is natural to use the second matrix-vector product where we use the entries of $s$ to form the linear operator.  We have
 
-\[ \nabla_hf = \nabla_h\|Sh-x\|^2 = S^\ast(Sh-x) = S^\ast r, \] 
+\[ \nabla_hf = \nabla_h\frac{1}{2}\|Sh-x\|^2 = S^\ast(Sh-x) = S^\ast r, \] 
 
 \noindent where we define the residual $r=Sh-x = x_\text{est}-x$.  Written out, this gradient is
 
@@ -284,12 +287,12 @@ For the gradient $\nabla_hf$, we treat $s$ as a constant, and so it is natural t
 
 \noindent We recognize this as the cross-correlation between $s$ and $r$:
 
-\[ \nabla_h f[n] = \sum_{k=0}^4 \bar{s}[k]r[k+n] = (\bar{s}[-\cdot]\ast r[\cdot])[n], \]
+\[ \nabla_h f[n] = \sum_{k=0}^4 \bar{s}[k]r[k+n] = \big(\bar{s}[{-\,\cdot}]\ast r[\,\cdot\,]\big)[n], \]
 
-\noindent where $\bar{s}[-\cdot]$ is the matched filter of $s[\cdot]$.  Note that the convolution here does not include the entries that use the zero-padded boundaries.  In {\sc matlab}, we can compute this convolution with
+\noindent where $\bar{s}[{-\,\cdot}]$ is the matched filter of $s[\,\cdot\,]$.  Note that the convolution here does not include the entries that use the zero-padded boundaries.  In {\sc matlab}, we can compute this convolution with
 
 \begin{verb}
-   Dfh = conv(r, conj(s(end:-1:1)), 'valid')
+  Dfh = conv(r, conj(s(end:-1:1)), 'valid')
 \end{verb}
 
 \noindent The derivation and computations for $\nabla_sf$ are the very similar.
@@ -314,7 +317,8 @@ Now that we can efficiently compute the required gradients, we can use existing 
 
 It is straightforward to include the ``soft'' TV term in the gradients, and we can use standard first-order algorithms to solve the augmented problem.  Simulated data containing an impulsive source, two underwater acoustic channel impulse responses, and the two outputs of the underwater channels were provided by \cite{rideout_2016}.  The simulation also added zero mean Gaussian noise with standard deviation $0.005$.  We used the two channel outputs to attempt to recover the impulsive source and channel impulse responses.
 
-We take $\lambda_h = 0.1$, $\lambda_s=0.01$, $\lambda_{h,\text{TV}}=0.01$, and $\delta=0.1$ for the Huber functions $L_\delta(\cdot)$.  We initialized $h_i$ and $s$ with zero mean Gaussian random numbers with unit standard deviation.  In practice, we may not know the true lengths of $h_i$ and $s$, $K$ and $N$, respectively.  We do know the length of the observed signals, which is $K+N-1$.  In this example, $K=894$ and $N=1717$, and we guess $K_\text{est}=844$ and $N_\text{est}=1767$.  We used L1General \cite{schmidt_2010} to find a local solution of the augmented problem (\ref{eq:bce_aug}).  The initial entries of $h_i$ and $s$ were drawn from the standard normal distribution.
+We take $\lambda_h = 0.1$, $\lambda_s=0.01$, $\lambda_{h,\text{TV}}=0.01$, and $\delta=0.1$ for the Huber functions $L_\delta(\cdot)$.  We initialized $h_i$ and $s$ with zero mean Gaussian random numbers with unit standard deviation.  In practice, we may not know the true lengths of $h_i$ and $s$, $K$ and $N$, respectively.  We do know the length of the observed signals, which is $K+N-1$.  In this example, $K=894$ and $N=1717$, and we guess $K_\text{est}=844$ and $N_\text{est}=1767$.  We used L1General \cite{schmidt_2010} to find a local solution of the augmented problem (\ref{eq:bce_aug}).  The initial guesses for $h_i$ and $s$ were drawn from the standard normal distribution.
+% TODO: ``initial entries'' means intitialization, or true values?
 
 The results of the recovery are shown in Figure \ref{fig:bce_rec}.  We show the output and channel impulse response for only the first channel; the second channel is similar.  Researchers studying the acoustic channel are mainly interested in the time delays between peaks and relative phase shifts \cite{rideout_2016}.  Besides the overall magnitude ambiguity and time shift, it appears we can accurately estimate the time delays and phase shifts between the peaks of the channel response.
 
@@ -330,6 +334,7 @@ The results of the recovery are shown in Figure \ref{fig:bce_rec}.  We show the 
    
    \includegraphics[width=0.5\textwidth]{figures/bce_rec_004_s_trim.pdf}
    \caption{Blind channel estimation via problem (\ref{eq:bce_aug}) for a simulated underwater acoustic impulsive source.  Shown are the true and estimated first channel output, first channel impulse response, and source.  There are obvious magnitude and time shift differences, but the estimated channel output and channel impulse response are remarkably similar in structure and potentially useful for studying the underwater channel.}
+   % TODO: label x-axis a bit
    \label{fig:bce_rec}
 \end{figure}
 
@@ -338,9 +343,9 @@ The results of the recovery are shown in Figure \ref{fig:bce_rec}.  We show the 
 
 \section{Discussion}
 % [[[
-We have demonstrated a framework for computing the adjoint of discrete wavelet transforms, which arise in gradient computations in optimization problems.  The framework separates the action of the wavelet transform and the signal extension operator.  The half-point symmetric extension is a common choice and we have provided its transpose, but other extension operators can readily be cast into the framework.  For many practical purposes, it appears that the adjoint operator is remarkably close to the pseudoinverse transform, however, implementing the true adjoint is effectively a simple matter of handling the signal extension operation.
+We have demonstrated a framework for computing the adjoint of discrete wavelet transforms, which arise in gradient computations in optimization problems.  The framework separates the action of the wavelet transform and the signal extension operator.  The half-point symmetric extension is a common choice and we have provided its transpose, but other extension operators can readily be cast into the framework.  For many practical purposes, it appears that the adjoint operator is remarkably close to the pseudoinverse transform, however, implementing the true adjoint is just a simple matter of handling the signal extension operation.
 
-Another interesting adjoint appears in a blind channel estimation optimization problem.  The convolution of two problem variables, which is a nonlinear operation, can be written as a matrix-vector product in two ways.  With this viewpoint, deriving the gradient becomes simple and a fast implementation is immediate.  For an impulsive source sent through a simulated underwater acoustic channel, the blind channel estimation problem is able to accurately recover important details of the acoustic channel response.
+Another interesting adjoint appears in a blind channel estimation optimization problem.  The convolution of two variables, which is a nonlinear operation, can be written as a matrix-vector product in two ways.  With this viewpoint, deriving the gradient becomes simple and a fast implementation is immediate.  For an impulsive source sent through a simulated underwater acoustic channel, the blind channel estimation problem is able to accurately recover important details of the acoustic channel response.
 
 % ]]]
 
