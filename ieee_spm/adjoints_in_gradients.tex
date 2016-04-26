@@ -34,6 +34,8 @@
 
 %TODO should this be a ``lecture note'' or a ``tips and tricks''?
 
+%XXX limit to 12 citations and 4 figures
+
 \begin{document}
 \title{Efficient Adjoint Computation for Wavelet and Convolution Operators}
 \author{James~Folberth and 
@@ -81,7 +83,7 @@ The gradient of the differentiable term $f(x)={\frac{1}{2}\|\mathcal{RW}x-b\|_2^
 
 \[ \nabla f(x) = \mathcal{W}^\ast \mathcal{R}^\ast(\mathcal{RW}x-b). \] 
 
-\noindent In the case of a blurring PSF, we can apply $\mathcal{R}$ and $\mathcal{R}^\ast$ in $\mathcal{O}(N\log N)$ time in the Fourier domain via the FFT \cite{beck_2009, hansen_2006}.  Wavelet software packages (e.g., {\sc matlab} Wavelet Toolbox \cite{matlab_wt_2015}) implement discrete wavelet analysis and reconstruction in $\mathcal{O}(N)$ time; these operations correspond to $\mathcal{W}^\dagger$ and $\mathcal{W}$.  However, the adjoint of wavelet reconstruction, $\mathcal{W}^\ast$, is not implemented in software packages and is not expressly mentioned in the literature \cite{mallat_2009, daubechies_1992, strang_1996}.  A ``trick'' commonly used in practice is the ``pseudoinverse approximation'' $\mathcal{W}^\dagger\approx\mathcal{W}^\ast$, but we would like to find a way of computing the true adjoint of wavelet reconstruction (and analysis) in the same $\mathcal{O}(N)$ time. 
+\noindent In the case of a blurring PSF, we can apply $\mathcal{R}$ and $\mathcal{R}^\ast$ in $\mathcal{O}(N\log N)$ time in the Fourier domain via the FFT \cite{beck_2009, hansen_2006}.  Wavelet software packages (e.g., {\sc matlab} Wavelet Toolbox \cite{matlab_wt_2015}) implement discrete wavelet analysis and reconstruction in $\mathcal{O}(N)$ time; these operations correspond to $\mathcal{W}^\dagger$ and $\mathcal{W}$.  However, the adjoint of wavelet reconstruction, $\mathcal{W}^\ast$, is not implemented in software packages and is not expressly mentioned in the literature \cite{mallat_2009, strang_1996}.  A ``trick'' commonly used in practice is the ``pseudoinverse approximation'' $\mathcal{W}^\dagger\approx\mathcal{W}^\ast$, but we would like to find a way of computing the true adjoint of wavelet reconstruction (and analysis) in the same $\mathcal{O}(N)$ time. 
 %     how do we cite "the adjoint transform is not discussed"?
 %     Look in wavelet books.  Could say it's not discussed in standard textbooks such as Mallat, etc.  Check recent books (Daubechies' text probably doesn't have it, because it's old).
 %     The adjoint of the frame operator is mentioned in chapter 3 of Daubechies' "Ten Lectures".  It's given more detail in mallat_2009.
@@ -214,15 +216,18 @@ Let $y\in\reals^N$ be an arbitrary signal vector and $\{\phi_i\}_{i=1}^p$, $p\ge
    
    \noindent From this we see that with a complete wavelet software library, one only needs to implement $(\mathcal{E}^\dagger)^\ast$ to use the true adjoint instead of the approximation $\mathcal{W}^\ast\approx\mathcal{W}^\dagger$.
 
-\begin{figure}
-   \centering
-   %\includegraphics[width=0.8\columnwidth]{{figures/cameraman_rec_200_bior4.4_sym_trim}.pdf}
-   \includegraphics[width=0.8\columnwidth]{{figures/compare_bior4.4_sym_2500}.png}
-   \caption{Deblurred image after 2500 iterations of FISTA with $\mathcal{W}$ a three-stage CDF 9/7 transform with symmetric boundary conditions.  Again the left and top-right sections use $\mathcal{W}^\ast$ and the bottom-right section uses $\mathcal{W}^\dagger$.}
-   \label{fig:compare_bior4.4_sym}
-\end{figure}
+% limit to 4 figures
+%\begin{figure}
+%   \centering
+%   %\includegraphics[width=0.8\columnwidth]{{figures/cameraman_rec_200_bior4.4_sym_trim}.pdf}
+%   \includegraphics[width=0.8\columnwidth]{{figures/compare_bior4.4_sym_2500}.png}
+%   \caption{Deblurred image after 2500 iterations of FISTA with $\mathcal{W}$ a three-stage CDF 9/7 transform with symmetric boundary conditions.  Again the left and top-right sections use $\mathcal{W}^\ast$ and the bottom-right section uses $\mathcal{W}^\dagger$.}
+%   \label{fig:compare_bior4.4_sym}
+%\end{figure}
 
-Figure \ref{fig:compare_bior4.4_sym} shows the deblurred image after 2500 iterations of FISTA using a three-stage CDF 9/7 discrete wavelet transform with symmetric boundary conditions.  Using the true adjoint, the image reconstruction relative error (vs. the unblurred image) is $9.45\times 10^{-4}$ and $29.23\%$ of the coefficients are nonzero.  Using the pseudoinverse approximation, the relative error is $9.67\times 10^{-4}$ and $29.74\%$ of the coefficients are nonzero.  Here the pseudoinverse approximation works, but not quite as well as the true adjoint.
+%Figure \ref{fig:compare_bior4.4_sym} shows the deblurred image after 2500 iterations of FISTA using a three-stage CDF 9/7 discrete wavelet transform with symmetric boundary conditions.  Using the true adjoint, the image reconstruction relative error (vs. the unblurred image) is $9.45\times 10^{-4}$ and $29.23\%$ of the coefficients are nonzero.  Using the pseudoinverse approximation, the relative error is $9.67\times 10^{-4}$ and $29.74\%$ of the coefficients are nonzero.  Here the pseudoinverse approximation works, but not quite as well as the true adjoint.
+
+Consider deblurring the resolution chart from Figure \ref{fig:original} with 2500 iterations of FISTA using a three-stage CDF 9/7 discrete wavelet transform with symmetric boundary conditions.  The results of deblurring are visually very similar to Figure \ref{fig:compare_db1_sym}.  Using the true adjoint, the image reconstruction relative error (vs. the unblurred image) is $9.45\times 10^{-4}$ and $29.23\%$ of the coefficients are nonzero.  Using the pseudoinverse approximation, the relative error is $9.67\times 10^{-4}$ and $29.74\%$ of the coefficients are nonzero.  Here the pseudoinverse approximation works, but not quite as well as the true adjoint.
 
 \begin{figure}
    \centering
